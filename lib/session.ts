@@ -29,35 +29,49 @@ export type Session = {
   programmes: ProgrammeMembership[]
 }
 
-export async function getSession(): Promise<Session | null> {
-  return {
-    user: { name: "Amina Yusuf", email: "amina.yusuf@riversidetrust.org.uk" },
-    organisation: {
-      id: "riverside-trust",
-      name: "Riverside Trust",
-      description: "Employment support charity",
-      type: "provider",
-      access: "admin",
-    },
+const meridian = {
+  id: "meridian-employment",
+  name: "Meridian Employment",
+  description: "Employment support provider",
+  type: "provider",
+} as const
+
+const northshire = { id: "ctw-northshire", name: "Connect to Work: Northshire", position: "prime", status: "live" } as const
+const westmoor = {
+  id: "ctw-westmoor",
+  name: "Connect to Work: Westmoor",
+  position: "prime",
+  status: "waiting-for-confirmation",
+} as const
+
+const demoSessions: Record<"priya" | "marcus" | "tom", Session> = {
+  priya: {
+    user: { name: "Priya Nair", email: "priya.nair@meridianemployment.co.uk" },
+    organisation: { ...meridian, access: "admin" },
     programmes: [
-      {
-        id: "ctw-northshire",
-        name: "Connect to Work: Northshire",
-        position: "subcontractor",
-        status: "live",
-        jobRole: "compliance-lead",
-        permissions: ["sign-off", "privacy"],
-      },
-      {
-        id: "northshire-skills",
-        name: "Northshire Skills Pathway",
-        position: "prime",
-        status: "live",
-        jobRole: "partner-manager",
-        permissions: ["sign-off"],
-      },
+      { ...northshire, jobRole: "partner-manager", permissions: [] },
+      { ...westmoor, jobRole: "partner-manager", permissions: [] },
     ],
-  }
+  },
+  marcus: {
+    user: { name: "Marcus Webb", email: "marcus.webb@meridianemployment.co.uk" },
+    organisation: { ...meridian, access: "member" },
+    programmes: [
+      { ...northshire, jobRole: "partner-manager", permissions: ["sign-off", "bulk-import"] },
+      { ...westmoor, jobRole: "partner-manager", permissions: ["sign-off"] },
+    ],
+  },
+  tom: {
+    user: { name: "Tom Okafor", email: "tom.okafor@meridianemployment.co.uk" },
+    organisation: { ...meridian, access: "member" },
+    programmes: [{ ...northshire, jobRole: "caseworker", permissions: [] }],
+  },
+}
+
+const demoUser = "priya"
+
+export async function getSession(): Promise<Session | null> {
+  return demoSessions[demoUser]
 }
 
 export async function getSessionEmail() {

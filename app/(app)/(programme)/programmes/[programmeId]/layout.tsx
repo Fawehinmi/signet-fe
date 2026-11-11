@@ -7,20 +7,10 @@ import { ProgrammeSwitcher } from "@/components/app/programme-switcher"
 import { Sidebar } from "@/components/app/sidebar"
 import { Tag } from "@/components/ui/tag"
 import { findProgramme, programmeNavigation } from "@/lib/navigation"
-import { getSession, type ProgrammeStatus } from "@/lib/session"
+import { positionLabels, statusTags } from "@/lib/programme-labels"
+import { getSession } from "@/lib/session"
+import { getProgrammeStatus } from "@/lib/data/rules"
 
-const positions = {
-  prime: "Prime",
-  subcontractor: "Subcontractor",
-  commissioner: "Commissioner",
-}
-
-const statuses: Record<ProgrammeStatus, { label: string; tone: "ok" | "warn" | "info" }> = {
-  "waiting-for-documents": { label: "Waiting for documents", tone: "warn" },
-  "rules-in-progress": { label: "Rules in progress", tone: "info" },
-  "waiting-for-confirmation": { label: "Waiting for confirmation", tone: "info" },
-  live: { label: "Live", tone: "ok" },
-}
 
 export default async function ProgrammeLayout({
   children,
@@ -37,7 +27,7 @@ export default async function ProgrammeLayout({
   if (!programme) notFound()
 
   const items = programmeNavigation(session, programme)
-  const status = statuses[programme.status]
+  const status = statusTags[(await getProgrammeStatus(programme.id)) ?? programme.status]
 
   const backLink = (
     <Link href="/programmes" className="flex items-center gap-1.5 px-2 text-sm font-semibold text-brand-600">
@@ -53,7 +43,7 @@ export default async function ProgrammeLayout({
         programmes={session.programmes.map(({ id, name }) => ({ id, name }))}
       />
       <span className="hidden items-center gap-2 sm:flex">
-        <Tag tone="info">{positions[programme.position]}</Tag>
+        <Tag tone="info">{positionLabels[programme.position]}</Tag>
         <Tag tone={status.tone}>{status.label}</Tag>
       </span>
     </div>
@@ -75,3 +65,4 @@ export default async function ProgrammeLayout({
     </AppShell>
   )
 }
+
