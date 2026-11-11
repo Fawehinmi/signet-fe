@@ -1,7 +1,7 @@
 import { LoaderCircle } from "lucide-react"
 import { cn } from "@/lib/cn"
 
-type ButtonVariant = "primary" | "secondary" | "text"
+type ButtonVariant = "primary" | "secondary" | "text" | "danger"
 type ButtonSize = "md" | "sm"
 
 type ButtonStyleOptions = {
@@ -14,6 +14,7 @@ const variants: Record<ButtonVariant, string> = {
   primary: "bg-brand-400 text-white hover:bg-brand-500",
   secondary: "border border-brand-400 bg-white text-brand-500 hover:bg-brand-50",
   text: "text-brand-500 hover:bg-brand-50",
+  danger: "border border-danger-400 bg-white text-danger-700 hover:bg-danger-50",
 }
 
 export function buttonStyles({ variant = "primary", size = "md", fullWidth = false }: ButtonStyleOptions = {}) {
