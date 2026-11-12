@@ -12,10 +12,21 @@ type FileSlotProps = {
   file?: File
   error?: string
   accept?: string
+  hint?: string
+  detail?: string
   onChange: (file?: File) => void
 }
 
-export function FileSlot({ label, required, file, error, accept = ".pdf,.doc,.docx", onChange }: FileSlotProps) {
+export function FileSlot({
+  label,
+  required,
+  file,
+  error,
+  accept = ".pdf,.doc,.docx",
+  hint = "Drop a PDF or Word file here, or",
+  detail,
+  onChange,
+}: FileSlotProps) {
   const errorId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
@@ -56,7 +67,7 @@ export function FileSlot({ label, required, file, error, accept = ".pdf,.doc,.do
           <FileIcon className="size-[22px] shrink-0 text-brand-600" />
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-grey-900">{file.name}</p>
-            <p className="text-xs text-grey-700">{formatFileSize(file.size)}, added just now</p>
+            <p className="text-xs text-grey-700">{detail ?? `${formatFileSize(file.size)}, added just now`}</p>
           </div>
           <Button variant="text" size="sm" aria-label={`Replace ${label}`} aria-describedby={error ? errorId : undefined} onClick={openPicker}>
             Replace
@@ -85,7 +96,7 @@ export function FileSlot({ label, required, file, error, accept = ".pdf,.doc,.do
           )}
         >
           <Upload className="size-5 shrink-0 text-brand-600" />
-          <span className="flex-1 text-sm text-grey-700">Drop a PDF or Word file here, or</span>
+          <span className="flex-1 text-sm text-grey-700">{hint}</span>
           <Button
             variant="secondary"
             size="sm"

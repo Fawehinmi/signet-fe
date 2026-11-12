@@ -49,16 +49,16 @@ const demoSessions: Record<"priya" | "marcus" | "tom", Session> = {
     user: { name: "Priya Nair", email: "priya.nair@meridianemployment.co.uk" },
     organisation: { ...meridian, access: "admin" },
     programmes: [
-      { ...northshire, jobRole: "partner-manager", permissions: [] },
-      { ...westmoor, jobRole: "partner-manager", permissions: [] },
+      { ...northshire, jobRole: "partner-manager", permissions: ["sign-off"] },
+      { ...westmoor, jobRole: "partner-manager", permissions: ["sign-off"] },
     ],
   },
   marcus: {
     user: { name: "Marcus Webb", email: "marcus.webb@meridianemployment.co.uk" },
     organisation: { ...meridian, access: "member" },
     programmes: [
-      { ...northshire, jobRole: "partner-manager", permissions: ["sign-off", "bulk-import"] },
-      { ...westmoor, jobRole: "partner-manager", permissions: ["sign-off"] },
+      { ...northshire, jobRole: "caseworker", permissions: ["sign-off", "bulk-import"] },
+      { ...westmoor, jobRole: "caseworker", permissions: ["sign-off", "bulk-import"] },
     ],
   },
   tom: {

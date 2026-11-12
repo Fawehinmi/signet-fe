@@ -23,3 +23,7 @@ const teams: Record<string, TeamMember[]> = {
 export async function getSignOffHolders(programmeId: string) {
   return (teams[programmeId] ?? []).filter((member) => member.permissions.includes("sign-off"))
 }
+
+export async function getTeamMember(programmeId: string, jobTitle: string) {
+  return (teams[programmeId] ?? []).find((member) => member.jobTitle === jobTitle) ?? null
+}
