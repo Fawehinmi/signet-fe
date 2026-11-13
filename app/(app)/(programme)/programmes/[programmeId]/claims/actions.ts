@@ -4,48 +4,96 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { z } from "zod"
 import {
-  createClaim,
-  createNewVersion,
-  getClaim,
-  getNextPeriodToClaim,
-  getPeriod,
-  getPeriodClaims,
-  saveLeftOutResult,
-  saveSendByDate,
-  saveSentForSignOff,
+  draftStage,
+  getClaimItems,
+  getLatestClaim,
+  getToFix,
+  readyLabel,
+  saveApproval,
+  saveDecision,
+  saveLeftOut,
   saveSubmission,
 } from "@/lib/data/claims"
+import { saveChases } from "@/lib/data/results"
+import { today } from "@/lib/format"
 import { getProgrammePage } from "@/lib/programme-page"
 import {
+  chaseSchema,
+  decideResultSchema,
   leaveOutSchema,
-  sendByDateSchema,
+  signOffSchema,
   submitClaimSchema,
+  type ChaseValues,
+  type DecideResultValues,
   type LeaveOutValues,
-  type SendByDateValues,
+  type SignOffValues,
   type SubmitClaimValues,
 } from "@/lib/validations/claims"
 
-function claimsPath(programmeId: string, claimId?: string) {
-  return claimId ? `/programmes/${programmeId}/claims/${claimId}` : `/programmes/${programmeId}/claims`
+const refresh = "Refresh the page to see the latest."
+
+function refreshProgramme(programmeId: string) {
+  revalidatePath(`/programmes/${programmeId}`, "layout")
 }
 
-export async function startClaim(programmeId: string) {
-  const { session } = await getProgrammePage(programmeId, "claims")
-
-  const period = await getNextPeriodToClaim(programmeId)
-  if (!period) redirect(claimsPath(programmeId))
-
-  const claim = await createClaim(programmeId, period.id, session.user.name)
-  revalidatePath(claimsPath(programmeId), "layout")
-  redirect(claimsPath(programmeId, claim.id))
+async function findDraftItem(programmeId: string, periodId: string, resultId: string) {
+  const claim = await getLatestClaim(programmeId, periodId)
+  if (claim?.status !== "draft") return null
+  return (await getClaimItems(programmeId, claim)).find((item) => item.resultId === resultId) ?? null
 }
 
-export async function leaveOutResult(programmeId: string, claimId: string, resultId: string, values: LeaveOutValues) {
-  await getProgrammePage(programmeId, "claims")
+export async function chaseResults(programmeId: string, values: ChaseValues) {
+  const { session, programme } = await getProgrammePage(programmeId, "claims")
+  if (programme.jobRole !== "compliance-lead") {
+    return { errors: { message: ["Only the Compliance lead can chase results."] } }
+  }
 
-  const claim = await getClaim(programmeId, claimId)
-  if (claim?.status !== "draft" || !claim.results.some((result) => result.id === resultId)) {
-    return { errors: { reason: ["This result can't be left out now. Refresh the page to see the latest."] } }
+  const parsed = chaseSchema.safeParse(values)
+  if (!parsed.success) {
+    return { errors: z.flattenError(parsed.error).fieldErrors }
+  }
+
+  const open = (await getToFix(programmeId)).map((row) => row.result.id)
+  if (parsed.data.resultIds.some((id) => !open.includes(id))) {
+    return { errors: { message: [`Some of these results don't need fixing now. ${refresh}`] } }
+  }
+
+  await saveChases(programmeId, parsed.data.resultIds, { by: session.user.name, on: today(), message: parsed.data.message })
+  refreshProgramme(programmeId)
+
+  return { errors: null }
+}
+
+export async function decideResult(programmeId: string, periodId: string, resultId: string, values: DecideResultValues) {
+  const { session, programme } = await getProgrammePage(programmeId, "claims")
+
+  const item = await findDraftItem(programmeId, periodId, resultId)
+  if (programme.jobRole !== "compliance-lead" || !item || item.decision) {
+    return { errors: { reason: [`You can't decide on this result now. ${refresh}`] } }
+  }
+
+  const parsed = decideResultSchema.safeParse(values)
+  if (!parsed.success) {
+    return { errors: z.flattenError(parsed.error).fieldErrors }
+  }
+
+  const fits = parsed.data.kind === "accept-as-is" ? item.label === "needs-evidence" : item.label === "cannot-be-claimed"
+  if (!fits) {
+    return { errors: { reason: [`This decision doesn't fit the result's label. ${refresh}`] } }
+  }
+
+  await saveDecision(programmeId, periodId, resultId, parsed.data, session.user.name)
+  refreshProgramme(programmeId)
+
+  return { errors: null }
+}
+
+export async function leaveOutResult(programmeId: string, periodId: string, resultId: string, values: LeaveOutValues) {
+  const { session, programme } = await getProgrammePage(programmeId, "claims")
+
+  const item = await findDraftItem(programmeId, periodId, resultId)
+  if (programme.jobRole !== "compliance-lead" || !item || item.label === readyLabel || item.decision) {
+    return { errors: { reason: [`You can't leave this result out now. ${refresh}`] } }
   }
 
   const parsed = leaveOutSchema.safeParse(values)
@@ -53,35 +101,53 @@ export async function leaveOutResult(programmeId: string, claimId: string, resul
     return { errors: z.flattenError(parsed.error).fieldErrors }
   }
 
-  await saveLeftOutResult(programmeId, claimId, resultId, parsed.data)
-  revalidatePath(claimsPath(programmeId), "layout")
+  await saveLeftOut(programmeId, periodId, resultId, parsed.data, session.user.name)
+  refreshProgramme(programmeId)
 
   return { errors: null }
 }
 
-export async function sendForSignOff(programmeId: string, claimId: string) {
-  await getProgrammePage(programmeId, "claims")
-
-  const claim = await getClaim(programmeId, claimId)
-  if (claim?.status === "draft") {
-    await saveSentForSignOff(programmeId, claimId)
-    revalidatePath(claimsPath(programmeId), "layout")
-  }
-
-  redirect(claimsPath(programmeId, claimId))
-}
-
-export async function submitClaim(programmeId: string, claimId: string, values: SubmitClaimValues) {
+export async function signOffResult(programmeId: string, periodId: string, resultId: string, values: SignOffValues) {
   const { session, programme } = await getProgrammePage(programmeId, "claims")
 
-  const claim = await getClaim(programmeId, claimId)
-  const canSubmit =
-    claim?.status === "waiting-for-sign-off" &&
-    programme.permissions.includes("sign-off") &&
-    claim.builtBy !== session.user.name
+  const decision = (await findDraftItem(programmeId, periodId, resultId))?.decision
+  const canSignOff =
+    programme.permissions.includes("sign-off") && decision && !decision.approved && decision.by !== session.user.name
 
-  if (!canSubmit) {
-    return { errors: { confirmed: ["You can't submit this claim. Refresh the page to see the latest."] } }
+  if (!canSignOff) {
+    return { errors: { note: [`You can't sign off this result. ${refresh}`] } }
+  }
+
+  const parsed = signOffSchema.safeParse(values)
+  if (!parsed.success) {
+    return { errors: z.flattenError(parsed.error).fieldErrors }
+  }
+
+  if (parsed.data.outcome === "approve") {
+    await saveApproval(programmeId, periodId, resultId, session.user.name, parsed.data.note)
+  } else {
+    await saveLeftOut(
+      programmeId,
+      periodId,
+      resultId,
+      { to: "to-fix", reason: `Sign-off rejected by ${session.user.name}. ${parsed.data.note}` },
+      session.user.name,
+    )
+  }
+
+  refreshProgramme(programmeId)
+
+  return { errors: null }
+}
+
+export async function submitClaim(programmeId: string, periodId: string, values: SubmitClaimValues) {
+  const { session, programme } = await getProgrammePage(programmeId, "claims")
+
+  const claim = await getLatestClaim(programmeId, periodId)
+  const ready = claim?.status === "draft" && draftStage(await getClaimItems(programmeId, claim)) === "ready-to-submit"
+
+  if (programme.jobRole !== "compliance-lead" || !ready) {
+    return { errors: { confirmed: [`You can't submit this claim now. ${refresh}`] } }
   }
 
   const parsed = submitClaimSchema.safeParse(values)
@@ -89,44 +155,7 @@ export async function submitClaim(programmeId: string, claimId: string, values: 
     return { errors: z.flattenError(parsed.error).fieldErrors }
   }
 
-  await saveSubmission(programmeId, claimId, session.user.name)
-  revalidatePath(claimsPath(programmeId), "layout")
-  redirect(`${claimsPath(programmeId, claimId)}?submitted=1`)
-}
-
-export async function startNewVersion(programmeId: string, claimId: string) {
-  const { session } = await getProgrammePage(programmeId, "claims")
-
-  const claim = await getClaim(programmeId, claimId)
-  const versions = claim ? await getPeriodClaims(programmeId, claim.periodId) : []
-  if (claim?.status !== "sent-back" || versions[0]?.id !== claim.id) redirect(claimsPath(programmeId, claimId))
-
-  const newVersion = await createNewVersion(programmeId, claimId, session.user.name)
-  if (!newVersion) redirect(claimsPath(programmeId, claimId))
-
-  revalidatePath(claimsPath(programmeId), "layout")
-  redirect(claimsPath(programmeId, newVersion.id))
-}
-
-export async function changeSendByDate(programmeId: string, periodId: string, values: SendByDateValues) {
-  const { programme } = await getProgrammePage(programmeId, "claims")
-
-  const period = await getPeriod(programmeId, periodId)
-  if (!period || programme.jobRole !== "partner-manager") {
-    return { errors: { sendBy: ["Only Partner managers can change send-by dates"] } }
-  }
-
-  const parsed = sendByDateSchema.safeParse(values)
-  if (!parsed.success) {
-    return { errors: z.flattenError(parsed.error).fieldErrors }
-  }
-
-  if (parsed.data.sendBy <= period.end) {
-    return { errors: { sendBy: ["Choose a date after the period ends"] } }
-  }
-
-  await saveSendByDate(programmeId, periodId, parsed.data.sendBy)
-  revalidatePath(claimsPath(programmeId), "layout")
-
-  return { errors: null }
+  await saveSubmission(programmeId, periodId, session.user.name)
+  refreshProgramme(programmeId)
+  redirect(`/programmes/${programmeId}/claims/${periodId}?submitted=1`)
 }

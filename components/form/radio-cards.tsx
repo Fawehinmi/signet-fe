@@ -14,10 +14,11 @@ type RadioCardsProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, "type">
   legend: string
   options: RadioCardOption[]
   error?: string
+  stacked?: boolean
 }
 
 export const RadioCards = forwardRef<HTMLInputElement, RadioCardsProps>(function RadioCards(
-  { legend, options, error, className, ...props },
+  { legend, options, error, stacked, className, ...props },
   ref,
 ) {
   const errorId = useId()
@@ -25,7 +26,7 @@ export const RadioCards = forwardRef<HTMLInputElement, RadioCardsProps>(function
   return (
     <fieldset className={cn("flex flex-col gap-3", className)} aria-describedby={error ? errorId : undefined}>
       <legend className="mb-3 text-sm font-semibold text-grey-900">{legend}</legend>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className={cn("grid gap-3", !stacked && "sm:grid-cols-2")}>
         {options.map((option) => (
           <label
             key={option.value}

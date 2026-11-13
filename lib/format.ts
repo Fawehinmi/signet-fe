@@ -44,3 +44,9 @@ export function initials(name: string) {
     .slice(0, 2)
     .toUpperCase()
 }
+
+export function addDays(date: string, days: number) {
+  const value = new Date(`${date.slice(0, 10)}T00:00:00Z`)
+  value.setUTCDate(value.getUTCDate() + days)
+  return value.toISOString().slice(0, 10)
+}

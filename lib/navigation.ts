@@ -73,7 +73,13 @@ export function programmeNavigation(session: Session, programme: ProgrammeMember
   const settings = item("settings", "Programme settings", "sliders")
 
   if (programme.jobRole === "caseworker") {
-    return [home, dashboard, participants, outcomeChecks, item("upload-evidence", "Upload evidence", "file-plus", "Upload")]
+    return [
+      home,
+      dashboard,
+      participants,
+      outcomeChecks,
+      ...when(has("bulk-upload"), item("upload-evidence", "Upload evidence", "file-plus", "Upload")),
+    ]
   }
 
   if (programme.position === "commissioner") {

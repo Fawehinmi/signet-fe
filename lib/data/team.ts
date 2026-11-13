@@ -11,7 +11,7 @@ const teams: Record<string, TeamMember[]> = {
     { name: "Priya Nair", jobTitle: "Partnerships manager", permissions: [] },
     { name: "Marcus Webb", jobTitle: "Contracts and claims lead", permissions: ["sign-off", "bulk-import"] },
     { name: "Ruth Adeyemi", jobTitle: "Compliance lead", permissions: [] },
-    { name: "Tom Okafor", jobTitle: "Employment caseworker", permissions: [] },
+    { name: "Tom Okafor", jobTitle: "Employment caseworker", permissions: ["bulk-upload"] },
   ],
   "ctw-westmoor": [
     { name: "Priya Nair", jobTitle: "Partnerships manager", permissions: [] },

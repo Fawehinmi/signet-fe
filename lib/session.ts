@@ -3,7 +3,7 @@ export type OrganisationAccess = "admin" | "member"
 export type ProgrammePosition = "prime" | "subcontractor" | "commissioner"
 export type ProgrammeStatus = "waiting-for-documents" | "rules-in-progress" | "waiting-for-confirmation" | "live"
 export type JobRole = "partner-manager" | "compliance-lead" | "caseworker"
-export type Permission = "sign-off" | "bulk-import" | "privacy"
+export type Permission = "sign-off" | "bulk-import" | "bulk-upload" | "privacy"
 
 export type ProgrammeMembership = {
   id: string
@@ -44,27 +44,35 @@ const westmoor = {
   status: "waiting-for-confirmation",
 } as const
 
-const demoSessions: Record<"priya" | "marcus" | "tom", Session> = {
+const demoSessions: Record<"priya" | "marcus" | "ruth" | "tom", Session> = {
   priya: {
     user: { name: "Priya Nair", email: "priya.nair@meridianemployment.co.uk" },
     organisation: { ...meridian, access: "admin" },
     programmes: [
-      { ...northshire, jobRole: "partner-manager", permissions: ["sign-off"] },
-      { ...westmoor, jobRole: "partner-manager", permissions: ["sign-off"] },
+      { ...northshire, jobRole: "partner-manager", permissions: [] },
+      { ...westmoor, jobRole: "partner-manager", permissions: [] },
     ],
   },
   marcus: {
     user: { name: "Marcus Webb", email: "marcus.webb@meridianemployment.co.uk" },
     organisation: { ...meridian, access: "member" },
     programmes: [
-      { ...northshire, jobRole: "caseworker", permissions: ["sign-off", "bulk-import"] },
-      { ...westmoor, jobRole: "caseworker", permissions: ["sign-off", "bulk-import"] },
+      { ...northshire, jobRole: "partner-manager", permissions: ["sign-off", "bulk-import"] },
+      { ...westmoor, jobRole: "partner-manager", permissions: ["sign-off"] },
+    ],
+  },
+  ruth: {
+    user: { name: "Ruth Adeyemi", email: "ruth.adeyemi@meridianemployment.co.uk" },
+    organisation: { ...meridian, access: "member" },
+    programmes: [
+      { ...northshire, jobRole: "compliance-lead", permissions: [] },
+      { ...westmoor, jobRole: "compliance-lead", permissions: [] },
     ],
   },
   tom: {
     user: { name: "Tom Okafor", email: "tom.okafor@meridianemployment.co.uk" },
     organisation: { ...meridian, access: "member" },
-    programmes: [{ ...northshire, jobRole: "caseworker", permissions: [] }],
+    programmes: [{ ...northshire, jobRole: "caseworker", permissions: ["bulk-upload"] }],
   },
 }
 
