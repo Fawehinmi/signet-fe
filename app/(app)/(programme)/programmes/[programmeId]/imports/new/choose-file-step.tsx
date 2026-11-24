@@ -8,7 +8,6 @@ import { Section } from "@/components/app/section"
 import { FileSlot } from "@/components/form/file-slot"
 import { RadioGroup } from "@/components/form/radio-group"
 import { Button } from "@/components/ui/button"
-import { StepList } from "@/components/ui/step-list"
 import { parseCsv } from "@/lib/csv"
 import { plural } from "@/lib/format"
 import { chooseFileSchema, importTypeLabels, type ChooseFileValues } from "@/lib/validations/imports"
@@ -106,18 +105,6 @@ export function ChooseFileStep({ initial, onContinue }: ChooseFileStepProps) {
               </Button>
             </div>
           </form>
-        </Section>
-      }
-      side={
-        <Section title="How it works">
-          <StepList
-            steps={[
-              "Choose your file",
-              "Check how its columns match",
-              "Preview what will be added",
-              "Confirm the import",
-            ]}
-          />
         </Section>
       }
     />

@@ -15,12 +15,11 @@ type AddFilesStepProps = {
   initial: File[]
   scopeSentence: string
   footNote: string
-  sidePanel: React.ReactNode
   onChangeScope: () => void
   onContinue: (files: File[]) => void
 }
 
-export function AddFilesStep({ initial, scopeSentence, footNote, sidePanel, onChangeScope, onContinue }: AddFilesStepProps) {
+export function AddFilesStep({ initial, scopeSentence, footNote, onChangeScope, onContinue }: AddFilesStepProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [files, setFiles] = useState<File[]>(initial)
   const [rejected, setRejected] = useState<string[]>([])
@@ -67,6 +66,7 @@ export function AddFilesStep({ initial, scopeSentence, footNote, sidePanel, onCh
         main={
           <Section
             title="Your files"
+            description="Photos and scans are fine if they're clear. Put the participant reference in the file name, like NS-0433, and the file is matched for you."
             action={
               <span className="rounded-full bg-grey-100 px-2 text-xs leading-5 font-semibold text-grey-800">
                 {files.length}
@@ -160,17 +160,6 @@ export function AddFilesStep({ initial, scopeSentence, footNote, sidePanel, onCh
               </Button>
             </div>
           </Section>
-        }
-        side={
-          <>
-            <Section title="Before you add files">
-              <p className="text-sm leading-[22px] text-grey-800">
-                Photos and scans are fine if they&apos;re clear. Put the participant reference in the file name, like
-                NS-0433, and the file is matched for you.
-              </p>
-            </Section>
-            {sidePanel}
-          </>
         }
       />
     </>

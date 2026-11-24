@@ -12,6 +12,7 @@ import { partnerLabel } from "@/lib/claim-labels"
 import type { Claim, ClaimPeriod } from "@/lib/data/claims"
 import { formatDate } from "@/lib/format"
 import { ClaimVersions } from "./claim-versions"
+import { resultNouns } from "@/lib/result-checks"
 
 type SentBackClaimProps = {
   programmeId: string
@@ -62,7 +63,7 @@ export function SentBackClaim({ programmeId, period, claim, versions, commission
                     <CircleAlert className="mt-0.5 size-5 shrink-0 text-warning-800" />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold text-grey-900">
-                        {item.participantRef}, {item.result.toLowerCase()}
+                        {item.participantRef}, {resultNouns[item.result]}
                       </p>
                       <p className="text-sm text-grey-700">
                         From {partnerLabel(item.partnerName)}. {item.problem}.
@@ -85,10 +86,6 @@ export function SentBackClaim({ programmeId, period, claim, versions, commission
                 ]}
               />
             </Section>
-          </>
-        }
-        side={
-          <>
             <Section title="Claim">
               <DetailsList
                 items={[

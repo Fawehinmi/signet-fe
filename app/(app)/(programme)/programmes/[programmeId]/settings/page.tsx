@@ -73,26 +73,24 @@ export default async function ProgrammeSettingsPage({ params }: ProgrammeSetting
                 )}
               </Section>
             )}
+            <Section title="About this programme">
+              <DetailsList
+                items={[
+                  { label: "Position", value: <Tag tone="info">{positionLabels[programme.position]}</Tag> },
+                  {
+                    label: "Commissioner",
+                    value: details.commissionerJoined ? (
+                      details.commissioner
+                    ) : (
+                      <span className="text-grey-600">{details.commissioner}, not joined</span>
+                    ),
+                  },
+                  { label: "Created by", value: details.createdBy },
+                  { label: "Created", value: formatDate(details.createdOn) },
+                ]}
+              />
+            </Section>
           </>
-        }
-        side={
-          <Section title="About this programme">
-            <DetailsList
-              items={[
-                { label: "Position", value: <Tag tone="info">{positionLabels[programme.position]}</Tag> },
-                {
-                  label: "Commissioner",
-                  value: details.commissionerJoined ? (
-                    details.commissioner
-                  ) : (
-                    <span className="text-grey-600">{details.commissioner}, not joined</span>
-                  ),
-                },
-                { label: "Created by", value: details.createdBy },
-                { label: "Created", value: formatDate(details.createdOn) },
-              ]}
-            />
-          </Section>
         }
       />
     </>

@@ -2,15 +2,20 @@
 
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import { getClaimPeriods } from "@/lib/data/claims"
+import { z } from "zod"
+import { getClaimPeriods, getToFix } from "@/lib/data/claims"
 import { getUpload, getUploadPool, saveUnmatchedMatch, saveUpload } from "@/lib/data/evidence"
+import { saveCheckRequest } from "@/lib/data/results"
+import { getAdmins } from "@/lib/data/team"
 import { evidenceTypes, participantsInScope } from "@/lib/evidence-matching"
 import { getProgrammePage } from "@/lib/programme-page"
 import {
   evidenceFilesSchema,
   fileMatchSchema,
+  sendForCheckingSchema,
   uploadRequestSchema,
   type FileMatchValues,
+  type SendForCheckingValues,
   type UploadScope,
 } from "@/lib/validations/evidence"
 
@@ -91,4 +96,30 @@ export async function matchUnmatched(programmeId: string, uploadId: string, file
   revalidatePath(`/programmes/${programmeId}`, "layout")
 
   return { error: null }
+}
+
+export async function sendForChecking(programmeId: string, resultId: string, values: SendForCheckingValues) {
+  const { session, programme } = await getProgrammePage(programmeId, "upload-evidence")
+
+  const result = (await getToFix(programmeId)).find((row) => row.result.id === resultId)?.result
+  const canSend =
+    programme.jobRole === "caseworker" &&
+    result?.caseworker === session.user.name &&
+    result.label === "needs-evidence" &&
+    !result.heldDecision &&
+    !(result.check && !result.check.answer)
+
+  if (!canSend || (await getAdmins(programmeId)).length === 0) {
+    return { errors: { note: ["This result can't be sent for checking now. Refresh the page to see the latest."] } }
+  }
+
+  const parsed = sendForCheckingSchema.safeParse(values)
+  if (!parsed.success) {
+    return { errors: z.flattenError(parsed.error).fieldErrors }
+  }
+
+  await saveCheckRequest(programmeId, resultId, { by: session.user.name, note: parsed.data.note })
+  revalidatePath(`/programmes/${programmeId}`, "layout")
+
+  return { errors: null }
 }

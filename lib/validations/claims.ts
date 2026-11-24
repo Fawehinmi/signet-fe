@@ -28,6 +28,11 @@ export const signOffSchema = z
     }
   })
 
+export const checkResultSchema = z.object({
+  outcome: z.enum(["accept-as-is", "send-back"], "Choose accept as is or send back"),
+  reason,
+})
+
 export const submitClaimSchema = z.object({
   confirmed: z.boolean().refine((value) => value, "Tick the box to confirm you've checked the claim"),
 })
@@ -36,4 +41,5 @@ export type ChaseValues = z.infer<typeof chaseSchema>
 export type DecideResultValues = z.infer<typeof decideResultSchema>
 export type LeaveOutValues = z.infer<typeof leaveOutSchema>
 export type SignOffValues = z.infer<typeof signOffSchema>
+export type CheckResultValues = z.infer<typeof checkResultSchema>
 export type SubmitClaimValues = z.infer<typeof submitClaimSchema>

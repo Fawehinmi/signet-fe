@@ -1,8 +1,9 @@
 import { applyLabelChange, getLatestClaim, getPeriod, type ClaimEffect } from "@/lib/data/claims"
+import { getOwnParticipants } from "@/lib/data/participants"
 import { addEvidence, getParticipantResults, getResults } from "@/lib/data/results"
 import type { CaseloadParticipant } from "@/lib/evidence-matching"
 import { resultLabelTags } from "@/lib/programme-labels"
-import type { ResultCheck } from "@/lib/result-checks"
+import { resultNouns, type ResultCheck } from "@/lib/result-checks"
 import type { JobRole } from "@/lib/session"
 import type { EvidenceResult, FileMatchValues, UploadScope } from "@/lib/validations/evidence"
 
@@ -28,20 +29,6 @@ export type EvidenceUpload = {
   changes: UploadChange[]
 }
 
-const participants: Record<string, { ref: string; name: string; caseworker: string }[]> = {
-  "ctw-northshire": [
-    { ref: "NS-0433", name: "Darren Lowe", caseworker: "Tom Okafor" },
-    { ref: "NS-0398", name: "Kyle Wright", caseworker: "Tom Okafor" },
-    { ref: "NS-0431", name: "Hassan Ali", caseworker: "Tom Okafor" },
-    { ref: "NS-0432", name: "Chloe Bennett", caseworker: "Tom Okafor" },
-    { ref: "NS-0441", name: "Kyla Morris", caseworker: "Tom Okafor" },
-    { ref: "NS-0452", name: "Amira Hussain", caseworker: "Tom Okafor" },
-    { ref: "NS-0467", name: "Ben Carter", caseworker: "Tom Okafor" },
-    { ref: "NS-0416", name: "Megan Holt", caseworker: "Tom Okafor" },
-    { ref: "NS-0407", name: "Sophie Marsh", caseworker: "Tom Okafor" },
-  ],
-}
-
 const uploadsByProgramme: Record<string, EvidenceUpload[]> = {
   "ctw-northshire": [
     {
@@ -50,10 +37,10 @@ const uploadsByProgramme: Record<string, EvidenceUpload[]> = {
       on: "2027-08-18T13:20:00Z",
       scope: { kind: "month", periodId: "2027-08", who: "all", participantRefs: [] },
       files: [
-        { name: "NS-0416_payslip_aug.pdf", size: 210000, participantRef: "NS-0416", evidenceType: "Payslip", result: "Job outcome" },
-        { name: "NS-0416_employer_letter.pdf", size: 180000, participantRef: "NS-0416", evidenceType: "Employer letter", result: "Job outcome" },
-        { name: "NS-0407_start_form.pdf", size: 120000, participantRef: "NS-0407", evidenceType: "Start form", result: "Start" },
-        { name: "smarsh_consent.pdf", size: 98000, participantRef: "NS-0407", evidenceType: "Consent form", result: "Start" },
+        { name: "NS-0416_payslip_aug.pdf", size: 210000, participantRef: "NS-0416", evidenceType: "Payslip", result: "Outcome" },
+        { name: "NS-0416_employer_letter.pdf", size: 180000, participantRef: "NS-0416", evidenceType: "Employer letter", result: "Outcome" },
+        { name: "NS-0407_start_form.pdf", size: 120000, participantRef: "NS-0407", evidenceType: "Start form", result: "Onboarded" },
+        { name: "smarsh_consent.pdf", size: 98000, participantRef: "NS-0407", evidenceType: "Consent form", result: "Enrolled" },
       ],
       unmatched: [{ name: "IMG_1904.jpg", size: 1840000, reason: "We couldn't tell who it's for." }],
       changes: [],
@@ -64,11 +51,20 @@ const uploadsByProgramme: Record<string, EvidenceUpload[]> = {
       on: "2027-09-01T08:30:00Z",
       scope: { kind: "programme", periodId: "", who: "all", participantRefs: [] },
       files: [
-        { name: "NS-0431_consent_form.pdf", size: 101000, participantRef: "NS-0431", evidenceType: "Consent form", result: "Start" },
-        { name: "NS-0432_consent_form.pdf", size: 99000, participantRef: "NS-0432", evidenceType: "Consent form", result: "Start" },
-        { name: "NS-0441_referral_letter.pdf", size: 143000, participantRef: "NS-0441", evidenceType: "Referral letter", result: "Start" },
+        { name: "NS-0431_consent_form.pdf", size: 101000, participantRef: "NS-0431", evidenceType: "Consent form", result: "Enrolled" },
+        { name: "NS-0432_consent_form.pdf", size: 99000, participantRef: "NS-0432", evidenceType: "Consent form", result: "Enrolled" },
+        { name: "NS-0441_referral_letter.pdf", size: 143000, participantRef: "NS-0441", evidenceType: "Referral letter", result: "Enrolled" },
       ],
       unmatched: [{ name: "scan_0051.pdf", size: 420000, reason: "It isn't for anyone in this upload." }],
+      changes: [],
+    },
+    {
+      id: "up-0929",
+      uploadedBy: "Tom Okafor",
+      on: "2027-09-29T10:05:00Z",
+      scope: { kind: "participant", periodId: "", who: "all", participantRefs: ["NS-0467"] },
+      files: [{ name: "bcarter_start_form.pdf", size: 134000, participantRef: "NS-0467", evidenceType: "Start form", result: "Onboarded" }],
+      unmatched: [],
       changes: [],
     },
   ],
@@ -91,16 +87,16 @@ function claimChange(effect: ClaimEffect): UploadChange {
   if (effect.kind === "adjustment") {
     return {
       kind: "claim",
-      title: `Adjustment added to the ${effect.periodLabel} claim`,
-      detail: "The earlier claim was already accepted, so the change comes through as an adjustment.",
+      title: `Revision added to the ${effect.periodLabel} claim`,
+      detail: "The earlier claim is closed, so the change comes through as a revision.",
     }
   }
 
   if (effect.kind === "adjustment-removed") {
     return {
       kind: "claim",
-      title: `Adjustment removed from the ${effect.periodLabel} claim`,
-      detail: "It counts again, so it cancels out the earlier adjustment.",
+      title: `Revision removed from the ${effect.periodLabel} claim`,
+      detail: "It counts again, so it cancels out the earlier revision.",
     }
   }
 
@@ -111,8 +107,8 @@ function claimChange(effect: ClaimEffect): UploadChange {
   return { kind: "claim", title: `${effect.periodLabel} claim updated`, detail: "It's still a draft, so the change shows there straight away." }
 }
 
-async function recordEvidence(programmeId: string, scope: UploadScope, files: EvidenceUpload["files"]) {
-  const names = participants[programmeId] ?? []
+async function recordEvidence(programmeId: string, scope: UploadScope, files: EvidenceUpload["files"], by: string) {
+  const names = await getOwnParticipants(programmeId)
   const changes: UploadChange[] = []
 
   for (const file of files) {
@@ -121,13 +117,14 @@ async function recordEvidence(programmeId: string, scope: UploadScope, files: Ev
       result: file.result,
       evidenceType: file.evidenceType,
       periodId: scope.kind === "month" ? scope.periodId : null,
+      by,
     })
 
     for (const change of labelChanges) {
       const name = names.find((participant) => participant.ref === file.participantRef)?.name ?? file.participantRef
       changes.push({
         kind: "label",
-        title: `${name}'s ${file.result.toLowerCase()} is now ${resultLabelTags[change.after].label}`,
+        title: `${name}'s ${resultNouns[file.result]} is now ${resultLabelTags[change.after].label}`,
         detail: "Checked against the rules. Its proof pack is updated.",
       })
 
@@ -145,7 +142,7 @@ export async function getUploadPool(
 ): Promise<CaseloadParticipant[]> {
   const results = await getResults(programmeId)
 
-  return (participants[programmeId] ?? [])
+  return (await getOwnParticipants(programmeId))
     .filter((participant) => person.jobRole !== "caseworker" || participant.caseworker === person.name)
     .map(({ ref, name }) => ({
       ref,
@@ -182,6 +179,18 @@ export async function getResultChecks(programmeId: string, refs: string[]): Prom
   )
 }
 
+export async function getEvidenceOnFile(programmeId: string, participantRef: string, result: EvidenceResult) {
+  const latest = new Map<string, string>()
+
+  for (const upload of uploadsFor(programmeId)) {
+    for (const file of upload.files) {
+      if (file.participantRef === participantRef && file.result === result) latest.set(file.evidenceType, upload.on)
+    }
+  }
+
+  return [...latest].map(([evidenceType, on]) => ({ evidenceType, on }))
+}
+
 export async function getUploads(programmeId: string, uploadedBy: string) {
   return uploadsFor(programmeId)
     .filter((upload) => upload.uploadedBy === uploadedBy)
@@ -193,7 +202,7 @@ export async function getUpload(programmeId: string, uploadId: string) {
 }
 
 export async function saveUpload(programmeId: string, values: Omit<EvidenceUpload, "id" | "on" | "changes">) {
-  const changes = await recordEvidence(programmeId, values.scope, values.files)
+  const changes = await recordEvidence(programmeId, values.scope, values.files, values.uploadedBy)
   const upload: EvidenceUpload = { ...values, changes, id: crypto.randomUUID(), on: new Date().toISOString() }
   uploadsByProgramme[programmeId] = [...uploadsFor(programmeId), upload]
   return upload
@@ -207,5 +216,5 @@ export async function saveUnmatchedMatch(programmeId: string, uploadId: string, 
   const matched = { name: file.name, size: file.size, ...values }
   upload.unmatched = upload.unmatched.filter((item) => item.name !== fileName)
   upload.files = [...upload.files, matched]
-  upload.changes = [...upload.changes, ...(await recordEvidence(programmeId, upload.scope, [matched]))]
+  upload.changes = [...upload.changes, ...(await recordEvidence(programmeId, upload.scope, [matched], upload.uploadedBy))]
 }

@@ -12,6 +12,7 @@ import { cn } from "@/lib/cn"
 import type { CaseloadParticipant } from "@/lib/evidence-matching"
 import { initials } from "@/lib/format"
 import { uploadScopeSchema, type UploadScope } from "@/lib/validations/evidence"
+import { resultNouns } from "@/lib/result-checks"
 
 type ScopeStepProps = {
   initial: UploadScope | null
@@ -157,13 +158,13 @@ export function ScopeStep({ initial, periods, caseload, pool, onContinue }: Scop
   const kindField = register("kind", { onChange: () => setValue("participantRefs", []) })
 
   function resultsOf(participant: CaseloadParticipant) {
-    const kinds = [...new Set(participant.results.map((item) => item.result.toLowerCase()))]
+    const kinds = [...new Set(participant.results.map((item) => resultNouns[item.result]))]
     return kinds.length > 0 ? kinds.join(" and ") : "no results yet"
   }
 
   function resultIn(participant: CaseloadParticipant) {
-    const result = participant.results.find((item) => item.periodId === periodId)?.result ?? "result"
-    return `${result.toLowerCase()} in ${month?.label}`
+    const result = participant.results.find((item) => item.periodId === periodId)?.result
+    return `${result ? resultNouns[result] : "result"} in ${month?.label}`
   }
 
   const note =
@@ -300,21 +301,6 @@ export function ScopeStep({ initial, periods, caseload, pool, onContinue }: Scop
             </div>
           </form>
         </Section>
-      }
-      side={
-        <>
-          <Section title="Why we ask">
-            <p className="text-sm leading-[22px] text-grey-800">
-              Matching only looks inside what you choose. It&apos;s saved with the upload, so you can see later what it
-              was for.
-            </p>
-          </Section>
-          <Section title="Participants">
-            <p className="text-sm leading-[22px] text-grey-800">
-              Participants come from Imports. You can only match files to people already on the programme.
-            </p>
-          </Section>
-        </>
       }
     />
   )

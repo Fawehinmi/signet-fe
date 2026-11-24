@@ -9,12 +9,12 @@ import { SentBackClaim } from "./sent-back-claim"
 
 type ClaimMonthPageProps = {
   params: Promise<{ programmeId: string; periodId: string }>
-  searchParams: Promise<{ version?: string; submitted?: string; ready?: string }>
+  searchParams: Promise<{ version?: string; submitted?: string; ready?: string; show?: string }>
 }
 
 export default async function ClaimMonthPage({ params, searchParams }: ClaimMonthPageProps) {
   const { programmeId, periodId } = await params
-  const { version, submitted, ready } = await searchParams
+  const { version, submitted, ready, show } = await searchParams
   const { session, programme } = await getProgrammePage(programmeId, "claims")
 
   const period = await getPeriod(programmeId, periodId)
@@ -44,6 +44,7 @@ export default async function ClaimMonthPage({ params, searchParams }: ClaimMont
           canSignOff: programme.permissions.includes("sign-off"),
         }}
         showAllReady={ready === "all"}
+        show={show}
       />
     )
   }

@@ -18,11 +18,11 @@ export function ProgrammeSwitcher({ current, programmes }: { current: ProgrammeL
       <button
         type="button"
         aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
+        // onClick={() => setOpen((value) => !value)}
         className="flex max-w-full items-center gap-1.5 rounded-md px-2 py-1.5 font-display text-lg font-medium text-grey-900 hover:bg-grey-100"
       >
         <span className="truncate">{current.name}</span>
-        <ChevronDown className={cn("size-5 shrink-0 text-grey-700 transition-transform", open && "rotate-180")} />
+        {/* <ChevronDown className={cn("size-5 shrink-0 text-grey-700 transition-transform", open && "rotate-180")} /> */}
       </button>
 
       {open && (

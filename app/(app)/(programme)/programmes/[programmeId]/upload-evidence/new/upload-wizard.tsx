@@ -21,12 +21,12 @@ type UploadWizardProps = {
   pool: string
   aiOn: boolean
   checks: ResultCheck[]
-  whoSees: React.ReactNode
+  initialScope: UploadScope | null
 }
 
-export function UploadWizard({ programmeId, periods, caseload, pool, aiOn, checks, whoSees }: UploadWizardProps) {
+export function UploadWizard({ programmeId, periods, caseload, pool, aiOn, checks, initialScope }: UploadWizardProps) {
   const [step, setStep] = useState(1)
-  const [scope, setScope] = useState<UploadScope | null>(null)
+  const [scope, setScope] = useState<UploadScope | null>(initialScope)
   const [files, setFiles] = useState<File[]>([])
   const [rows, setRows] = useState<MatchRow[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -128,7 +128,6 @@ export function UploadWizard({ programmeId, periods, caseload, pool, aiOn, check
           footNote={
             onlyOne ? `Only for ${onlyOne}.` : chosenNames.length > 0 ? "Only for the participants you chose." : `Only for participants in ${pool}.`
           }
-          sidePanel={whoSees}
           onChangeScope={() => setStep(1)}
           onContinue={(chosenFiles) => {
             const unchanged = chosenFiles.length === files.length && chosenFiles.every((file, index) => file === files[index])

@@ -36,15 +36,13 @@ export function RulesInProgress({ rules }: { rules: ProgrammeRules }) {
             <Section title="Progress">
               <RulesProgress rules={rules} />
             </Section>
+            <Section
+              title="Documents"
+              description={rules.sentOn && `Sent ${formatDate(rules.sentOn)}. You can't change these now.`}
+            >
+              <DocumentList documents={rules.documents} />
+            </Section>
           </>
-        }
-        side={
-          <Section
-            title="Documents"
-            description={rules.sentOn && `Sent ${formatDate(rules.sentOn)}. You can't change these now.`}
-          >
-            <DocumentList documents={rules.documents} />
-          </Section>
         }
       />
     </>

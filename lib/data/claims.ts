@@ -1,15 +1,20 @@
 import { today } from "@/lib/format"
 import { resultLabelTags, type ResultLabel } from "@/lib/programme-labels"
 import {
+  addCompletion,
   assignReadyResults,
+  holdDecision,
+  takeHeldDecisions,
   getMonthResults,
   getResult,
   getResults,
   moveResult,
   type LabelChange,
   type ProgrammeResult,
+  type HeldDecision,
   type ResultKind,
 } from "@/lib/data/results"
+import { resultKinds, resultNouns } from "@/lib/result-checks"
 import type { DecideResultValues, LeaveOutValues } from "@/lib/validations/claims"
 
 export type ClaimStatus = "draft" | "submitted" | "replaced" | "sent-back" | "accepted"
@@ -130,7 +135,7 @@ const periodsByProgramme: Record<string, ClaimPeriod[]> = {
     { id: "2027-07", label: "July 2027", start: "2027-07-01", end: "2027-07-31", sendBy: "2027-08-04" },
     { id: "2027-08", label: "August 2027", start: "2027-08-01", end: "2027-08-31", sendBy: "2027-09-04" },
     { id: "2027-09", label: "September 2027", start: "2027-09-01", end: "2027-09-30", sendBy: "2027-10-04" },
-    { id: "2027-10", label: "October 2027", start: "2027-10-01", end: "2027-10-31", sendBy: "2027-11-04" },
+    // { id: "2027-10", label: "October 2027", start: "2027-10-01", end: "2027-10-31", sendBy: "2027-11-04" },
   ],
 }
 
@@ -173,8 +178,9 @@ const claimsByProgramme: Record<string, Claim[]> = {
       status: "accepted",
       asAt: "2027-07-03",
       counts: [
-        { label: "Start", kind: "Start", fromPartners: 22, ownDelivery: 5 },
-        { label: "Job outcome", kind: "Job outcome", fromPartners: 9, ownDelivery: 2 },
+        { label: "Enrolled", kind: "Enrolled", fromPartners: 7, ownDelivery: 2 },
+        { label: "Onboarded", kind: "Onboarded", fromPartners: 15, ownDelivery: 3 },
+        { label: "Outcome", kind: "Outcome", fromPartners: 9, ownDelivery: 2 },
       ],
       submitted: { by: "Ruth Adeyemi", on: "2027-07-04T10:20:00Z", reference: "CL-NS-0627-1" },
       accepted: meridianAccepted("2027-07-07T09:05:00Z", "R-46511"),
@@ -183,9 +189,10 @@ const claimsByProgramme: Record<string, Claim[]> = {
       status: "accepted",
       asAt: "2027-08-03",
       counts: [
-        { label: "Start", kind: "Start", fromPartners: 25, ownDelivery: 6 },
-        { label: "Job outcome", kind: "Job outcome", fromPartners: 12, ownDelivery: 3 },
-        { label: "Adjustments to June 2027", kind: "Adjustment", fromPartners: 1, ownDelivery: 0 },
+        { label: "Enrolled", kind: "Enrolled", fromPartners: 8, ownDelivery: 2 },
+        { label: "Onboarded", kind: "Onboarded", fromPartners: 17, ownDelivery: 4 },
+        { label: "Outcome", kind: "Outcome", fromPartners: 12, ownDelivery: 3 },
+        { label: "Revision, June 2027", kind: "Adjustment", fromPartners: 1, ownDelivery: 0 },
       ],
       submitted: { by: "Ruth Adeyemi", on: "2027-08-04T08:45:00Z", reference: "CL-NS-0727-1" },
       accepted: meridianAccepted("2027-08-06T15:30:00Z", "R-47102"),
@@ -194,9 +201,10 @@ const claimsByProgramme: Record<string, Claim[]> = {
       status: "sent-back",
       asAt: "2027-09-03",
       counts: [
-        { label: "Start", kind: "Start", fromPartners: 27, ownDelivery: 6 },
-        { label: "Job outcome", kind: "Job outcome", fromPartners: 14, ownDelivery: 3 },
-        { label: "Adjustments to July 2027", kind: "Adjustment", fromPartners: 2, ownDelivery: 0 },
+        { label: "Enrolled", kind: "Enrolled", fromPartners: 9, ownDelivery: 2 },
+        { label: "Onboarded", kind: "Onboarded", fromPartners: 18, ownDelivery: 4 },
+        { label: "Outcome", kind: "Outcome", fromPartners: 14, ownDelivery: 3 },
+        { label: "Revision, July 2027", kind: "Adjustment", fromPartners: 2, ownDelivery: 0 },
       ],
       submitted: { by: "Ruth Adeyemi", on: "2027-09-04T09:00:00Z", reference: "CL-NS-0827-1" },
       sentBack: {
@@ -204,7 +212,7 @@ const claimsByProgramme: Record<string, Claim[]> = {
         on: "2027-09-09",
         reason: "NS-0187 couldn't be verified. Please fix it and send the claim again.",
         flagged: [
-          { participantRef: "NS-0187", result: "Start", partnerName: "Harbour Skills", problem: "Its proof pack couldn't be verified" },
+          { participantRef: "NS-0187", result: "Onboarded", partnerName: "Harbour Skills", problem: "Its proof pack couldn't be verified" },
         ],
       },
     }),
@@ -213,11 +221,12 @@ const claimsByProgramme: Record<string, Claim[]> = {
       draftedOn: "2027-09-09",
       draftedBecause: "sent-back",
       asAt: "2027-09-09",
-      changes: [{ subject: "NS-0187, start", before: "Couldn't be verified", now: "Sent again by Harbour Skills. Verified." }],
+      changes: [{ subject: "NS-0187, onboarding", before: "Couldn't be verified", now: "Sent again by Harbour Skills. Verified." }],
       counts: [
-        { label: "Start", kind: "Start", fromPartners: 27, ownDelivery: 6 },
-        { label: "Job outcome", kind: "Job outcome", fromPartners: 14, ownDelivery: 3 },
-        { label: "Adjustments to July 2027", kind: "Adjustment", fromPartners: 2, ownDelivery: 0 },
+        { label: "Enrolled", kind: "Enrolled", fromPartners: 9, ownDelivery: 2 },
+        { label: "Onboarded", kind: "Onboarded", fromPartners: 18, ownDelivery: 4 },
+        { label: "Outcome", kind: "Outcome", fromPartners: 14, ownDelivery: 3 },
+        { label: "Revision, July 2027", kind: "Adjustment", fromPartners: 2, ownDelivery: 0 },
       ],
       submitted: { by: "Ruth Adeyemi", on: "2027-09-09T14:10:00Z", reference: "CL-NS-0827-2" },
       accepted: meridianAccepted("2027-09-10T15:20:00Z", "R-48213"),
@@ -228,9 +237,9 @@ const claimsByProgramme: Record<string, Claim[]> = {
       asAt: "2027-10-01",
       adjustments: [
         {
-          resultId: "NS-0161-job",
+          resultId: "NS-0161-outcome",
           participantRef: "NS-0161",
-          result: "Job outcome",
+          result: "Outcome",
           partnerName: "Brightwell Training",
           fromPeriodId: "2027-08",
           before: "Ready to claim",
@@ -240,9 +249,9 @@ const claimsByProgramme: Record<string, Claim[]> = {
           on: "2027-09-15",
         },
         {
-          resultId: "NS-0416-job",
+          resultId: "NS-0416-outcome",
           participantRef: "NS-0416",
-          result: "Job outcome",
+          result: "Outcome",
           partnerName: null,
           fromPeriodId: "2027-08",
           before: "Ready to claim",
@@ -325,10 +334,10 @@ export function countClaim(items: ClaimItem[], adjustments: Adjustment[], period
     const group = adjustments.filter((item) => item.fromPeriodId === periodId)
     const sum = (own: boolean) => group.filter((item) => !item.partnerName === own).reduce((total, item) => total + item.count, 0)
     const label = periods.find((period) => period.id === periodId)?.label ?? periodId
-    return { label: `Adjustments to ${label}`, kind: "Adjustment", fromPartners: sum(false), ownDelivery: sum(true) }
+    return { label: `Revision, ${label}`, kind: "Adjustment", fromPartners: sum(false), ownDelivery: sum(true) }
   })
 
-  return [row("Start"), row("Job outcome"), ...adjusted]
+  return [...resultKinds.map(row), ...adjusted]
 }
 
 function monthStatus(claim: Claim, items: ClaimItem[]): MonthStatus {
@@ -386,7 +395,11 @@ async function draftEndedMonths(programmeId: string) {
     if (period.end >= today() || claimsFor(programmeId).some((claim) => claim.periodId === period.id)) continue
 
     await assignReadyResults(programmeId, period.id)
-    addClaim(programmeId, { ...blankClaim(period.id, 1, "month-ended"), adjustments: pendingAdjustments[programmeId] ?? [] })
+    addClaim(programmeId, {
+      ...blankClaim(period.id, 1, "month-ended"),
+      decisions: await takeHeldDecisions(programmeId, period.id),
+      adjustments: pendingAdjustments[programmeId] ?? [],
+    })
     pendingAdjustments[programmeId] = []
   }
 }
@@ -456,9 +469,33 @@ export async function saveDecision(programmeId: string, periodId: string, result
   if (claim) claim.decisions[resultId] = { ...values, by, on: today() }
 }
 
+export async function saveCheckedAcceptance(programmeId: string, resultId: string, decision: HeldDecision) {
+  const result = await getResult(programmeId, resultId)
+  if (!result) return null
+
+  if (!result.periodId) {
+    const target = await firstOpenPeriod(programmeId)
+    if (!target) return null
+    await moveResult(programmeId, result.id, target.id)
+  }
+
+  const period = await getPeriod(programmeId, result.periodId ?? "")
+  const latest = await getLatestClaim(programmeId, result.periodId ?? "")
+  if (!period || (latest && latest.status !== "draft")) return null
+
+  if (latest) latest.decisions[result.id] = decision
+  else await holdDecision(programmeId, result.id, decision)
+
+  return { period, drafted: Boolean(latest) }
+}
+
 export async function saveApproval(programmeId: string, periodId: string, resultId: string, by: string, note: string) {
   const decision = (await getLatestDraft(programmeId, periodId))?.decisions[resultId]
-  if (decision) decision.approved = { by, on: today(), note }
+  const result = await getResult(programmeId, resultId)
+  if (!decision || !result) return
+
+  decision.approved = { by, on: today(), note }
+  await addCompletion(programmeId, result, { labelBefore: result.label, how: decision.kind, detail: `Approved by ${by}` })
 }
 
 export async function saveLeftOut(programmeId: string, periodId: string, resultId: string, values: LeaveOutValues, by: string) {
@@ -474,7 +511,7 @@ export async function saveLeftOut(programmeId: string, periodId: string, resultI
     {
       ...toItem(result),
       to: next ? "next-month" : "to-fix",
-      where: next ? `Moved to ${next.label}` : "Back to To fix",
+      where: next ? `Moved to ${next.label}` : "Back to Fixes",
       reason: values.reason,
       by,
       on: today(),
@@ -565,7 +602,7 @@ export async function applyLabelChange(programmeId: string, change: LabelChange)
   const latest = await getLatestClaim(programmeId, result.periodId)
   if (!period || !latest) return null
 
-  const subject = `${result.participantRef}, ${result.result.toLowerCase()}`
+  const subject = `${result.participantRef}, ${resultNouns[result.result]}`
 
   if (latest.status === "draft") {
     const decision = latest.decisions[result.id]

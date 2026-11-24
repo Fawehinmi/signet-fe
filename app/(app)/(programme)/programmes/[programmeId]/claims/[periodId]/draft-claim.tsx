@@ -1,13 +1,12 @@
 import Link from "next/link"
 import { CircleCheck, Clock, KeyRound } from "lucide-react"
 import { Columns } from "@/components/app/columns"
+import { FilterChips } from "@/components/app/filter-chips"
 import { PageHeader } from "@/components/app/page-header"
 import { Section } from "@/components/app/section"
 import { Stats } from "@/components/app/stats"
 import { Banner } from "@/components/ui/banner"
 import { Button, buttonStyles } from "@/components/ui/button"
-import { DetailsList } from "@/components/ui/details-list"
-import { ProgressSteps } from "@/components/ui/progress-steps"
 import { Tag } from "@/components/ui/tag"
 import { joinNames, monthStatusTags } from "@/lib/claim-labels"
 import {
@@ -24,9 +23,9 @@ import {
   type Decision,
 } from "@/lib/data/claims"
 import { getSignOffHolders } from "@/lib/data/team"
-import { formatDate, formatPeriod, plural } from "@/lib/format"
+import { formatDate, plural } from "@/lib/format"
 import { AdjustmentsTable } from "./adjustments-table"
-import { ClaimChanges } from "./claim-changes"
+import { ChangeSummary } from "./change-summary"
 import { ClaimCounts } from "./claim-counts"
 import { ClaimVersions } from "./claim-versions"
 import { IssuesTable } from "./issues-table"
@@ -43,6 +42,7 @@ type DraftClaimProps = {
   commissioner: string
   viewer: { name: string; canDecide: boolean; canSignOff: boolean }
   showAllReady: boolean
+  show?: string
 }
 
 function hasDecision(item: ClaimItem): item is ClaimItem & { decision: Decision } {
@@ -58,7 +58,7 @@ function draftedNote(claim: Claim) {
   return `Signet drafted this on ${on}, when the month ended.`
 }
 
-export async function DraftClaim({ programmeId, period, claim, versions, commissioner, viewer, showAllReady }: DraftClaimProps) {
+export async function DraftClaim({ programmeId, period, claim, versions, commissioner, viewer, showAllReady, show }: DraftClaimProps) {
   const [items, periods, nextPeriod, holders] = await Promise.all([
     getClaimItems(programmeId, claim),
     getClaimPeriods(programmeId),
@@ -76,11 +76,36 @@ export async function DraftClaim({ programmeId, period, claim, versions, commiss
   const mineIds = mine.map((item) => item.resultId)
   const otherIssues = issues.filter((item) => !mineIds.includes(item.resultId))
   const decided = issues.filter(hasDecision)
+  const previous = versions.find((version) => version.version === claim.version - 1)
   const monthPath = `/programmes/${programmeId}/claims/${period.id}`
 
   const signOffNames = (decidedBy: string) => holders.filter((holder) => holder.name !== decidedBy).map((holder) => holder.name)
   const askedNames = [...new Set(waiting.flatMap((item) => signOffNames(item.decision.by)))]
   const askers = [...new Set(mine.map((item) => item.decision.by))]
+
+  const views = [
+    { key: "issues", label: "Fixes", count: otherIssues.length },
+    { key: "ready", label: "Ready", count: ready.length },
+    { key: "adjustments", label: "Revisions", count: claim.adjustments.length },
+    { key: "left-out", label: "Left out", count: claim.leftOut.length },
+  ].filter((view) => view.key !== "left-out" || view.count > 0)
+  const active = views.find((view) => view.key === show)?.key ?? (otherIssues.length > 0 ? "issues" : "ready")
+  const descriptions: Record<string, string> = {
+    issues: viewer.canDecide
+      ? "Accept a Needs evidence result as is, or challenge a Can't be claimed label. Both need a reason and Sign-off. Or leave it out."
+      : "The Compliance lead decides on each of these.",
+    ready: "Ready to claim. Nothing to decide.",
+    adjustments:
+      "These results changed after their claim was closed. Closed claims don't change, so the change comes through here as a revision.",
+    "left-out": "These aren't in this claim and don't need Sign-off.",
+  }
+  const empty: Record<string, string> = {
+    issues: mine.length > 0 ? "The fixes are waiting for your Sign-off, above." : "No fixes. Every result is ready to claim.",
+    ready: "No results are ready to claim yet.",
+    adjustments: "No revisions to closed claims this month.",
+    "left-out": "Nothing is left out.",
+  }
+  const activeCount = views.find((view) => view.key === active)?.count ?? 0
 
   return (
     <>
@@ -92,7 +117,7 @@ export async function DraftClaim({ programmeId, period, claim, versions, commiss
           { label: period.label, href: monthPath },
           { label: `Version ${claim.version}` },
         ]}
-        description={`${draftedNote(claim)} It's sealed when it's submitted.`}
+        description={`Send by ${formatDate(period.sendBy)}. ${draftedNote(claim)} It's sealed when it's submitted.`}
         actions={
           <>
             <Link href={`${monthPath}/preview`} className={buttonStyles({ variant: "secondary" })}>
@@ -141,7 +166,7 @@ export async function DraftClaim({ programmeId, period, claim, versions, commiss
         </Banner>
       )}
       {viewer.canDecide && stage === "ready-to-submit" && (
-        <Banner tone="ok" icon={CircleCheck} title="Every result with issues is decided" className="mb-8">
+        <Banner tone="ok" icon={CircleCheck} title="Every fix is decided" className="mb-8">
           Preview the claim, then submit it.
         </Banner>
       )}
@@ -152,7 +177,7 @@ export async function DraftClaim({ programmeId, period, claim, versions, commiss
           { label: "Ready", value: ready.length },
           mine.length > 0
             ? { label: "Need your Sign-off", value: mine.length, warn: true }
-            : { label: "Has issues", value: issues.length, warn: viewer.canDecide && stage === "ready-to-review" },
+            : { label: "Fixes", value: issues.length, warn: viewer.canDecide && stage === "ready-to-review" },
           { label: "Left out", value: claim.leftOut.length },
         ]}
       />
@@ -162,28 +187,36 @@ export async function DraftClaim({ programmeId, period, claim, versions, commiss
           <>
             {claim.changes.length > 0 && (
               <Section title={`What changed since Version ${claim.version - 1}`} count={claim.changes.length}>
-                <ClaimChanges changes={claim.changes} />
+                <ChangeSummary
+                  version={claim.version}
+                  changes={claim.changes}
+                  before={previous?.counts ?? []}
+                  after={counts}
+                  fixesLeft={issues.length - decided.length}
+                />
               </Section>
             )}
             {mine.length > 0 && (
               <Section
                 title="Waiting for your Sign-off"
-                description="Approved results count in the claim. Rejected ones are left out and go back to To fix."
+                description="Approved results count in the claim. Rejected ones are left out and go back to Fixes."
                 count={mine.length}
               >
                 <SignOffTable programmeId={programmeId} periodId={period.id} periodLabel={period.label} items={mine} />
               </Section>
             )}
-            {otherIssues.length > 0 && (
-              <Section
-                title="Has issues"
-                description={
-                  viewer.canDecide
-                    ? "Accept a Needs evidence result as is, or challenge a Can't be claimed label. Both need a reason and Sign-off. Or leave it out."
-                    : "The Compliance lead decides on each of these."
-                }
-                count={otherIssues.length}
-              >
+            <Section title="Results" description={descriptions[active]}>
+              <FilterChips
+                chips={views.map((view) => ({
+                  label: view.label,
+                  count: view.count,
+                  href: `${monthPath}?show=${view.key}`,
+                  active: view.key === active,
+                }))}
+              />
+              {activeCount === 0 ? (
+                <p className="border-t border-grey-200 pt-4 text-sm text-grey-700">{empty[active]}</p>
+              ) : active === "issues" ? (
                 <IssuesTable
                   programmeId={programmeId}
                   periodId={period.id}
@@ -193,68 +226,16 @@ export async function DraftClaim({ programmeId, period, claim, versions, commiss
                   canDecide={viewer.canDecide}
                   signOffNames={signOffNames}
                 />
-              </Section>
-            )}
-            {claim.leftOut.length > 0 && (
-              <Section title="Left out" description="These aren't in this claim and don't need Sign-off." count={claim.leftOut.length}>
-                <LeftOutTable items={claim.leftOut} />
-              </Section>
-            )}
-            {ready.length > 0 && (
-              <Section title="Ready" description="Ready to claim. Nothing to decide." count={ready.length}>
-                <ReadyTable items={ready} showAll={showAllReady} showAllHref={`${monthPath}?ready=all`} />
-              </Section>
-            )}
-            {claim.adjustments.length > 0 && (
-              <Section
-                title="Adjustments to earlier claims"
-                description="These results changed after their claim was accepted. Accepted claims stay closed, so the change comes through here."
-                count={claim.adjustments.length}
-              >
+              ) : active === "ready" ? (
+                <ReadyTable items={ready} showAll={showAllReady} showAllHref={`${monthPath}?show=ready&ready=all`} />
+              ) : active === "adjustments" ? (
                 <AdjustmentsTable adjustments={claim.adjustments} periods={periods} />
-              </Section>
-            )}
+              ) : (
+                <LeftOutTable items={claim.leftOut} />
+              )}
+            </Section>
             <Section title="Counts by payment type">
               <ClaimCounts counts={counts} />
-            </Section>
-          </>
-        }
-        side={
-          <>
-            {viewer.canDecide ? (
-              <Section title="Before you submit">
-                <ProgressSteps
-                  steps={[
-                    {
-                      label: "Decide on each result with issues",
-                      state: stage === "ready-to-review" ? "current" : "done",
-                    },
-                    {
-                      label: "Wait for Sign-off on any you accept as is or challenge",
-                      state: stage === "ready-to-review" ? "todo" : stage === "waiting-for-sign-off" ? "current" : "done",
-                    },
-                    { label: "Preview, then submit", state: stage === "ready-to-submit" ? "current" : "todo" },
-                  ]}
-                />
-              </Section>
-            ) : (
-              <Section title={mine.length > 0 ? "Your part" : "Who does what"}>
-                <p className="text-sm leading-[22px] text-grey-800">
-                  {mine.length > 0
-                    ? "Approve or reject each result waiting for you. The Compliance lead submits the claim once you've decided. You can't submit it."
-                    : "The Compliance lead decides on results with issues and submits the claim. A Sign-off holder approves any result accepted as is or challenged."}
-                </p>
-              </Section>
-            )}
-            <Section title="Claim">
-              <DetailsList
-                items={[
-                  { label: "Period", value: formatPeriod(period.start, period.end) },
-                  { label: "Send by", value: formatDate(period.sendBy) },
-                  { label: "Version", value: `Version ${claim.version}, draft` },
-                  { label: "Results", value: items.length },
-                ]}
-              />
             </Section>
             {versions.length > 1 && (
               <Section title="Versions">

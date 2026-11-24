@@ -1,6 +1,14 @@
 import type { ResultLabel } from "@/lib/programme-labels"
 
-export type ResultKind = "Start" | "Job outcome"
+export const resultKinds = ["Enrolled", "Onboarded", "Outcome"] as const
+
+export type ResultKind = (typeof resultKinds)[number]
+
+export const resultNouns: Record<ResultKind, string> = {
+  Enrolled: "enrolment",
+  Onboarded: "onboarding",
+  Outcome: "outcome",
+}
 
 export type ResultCheck = {
   resultId: string

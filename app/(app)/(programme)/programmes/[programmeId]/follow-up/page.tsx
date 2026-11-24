@@ -92,14 +92,6 @@ export default async function FollowUpPage({ params }: FollowUpPageProps) {
               <p className="mt-3 text-[13px] text-grey-700">Showing {plural(questions.length, "question")}</p>
             </Section>
           }
-          side={
-            <Section title="Sharing">
-              <p className="text-sm leading-[22px] text-grey-800">
-                {canAnswer ? "Answer directly. You choose" : "The Compliance lead answers and chooses"} what to share.
-                The commissioner can only view it, and access ends after {accessDays} days.
-              </p>
-            </Section>
-          }
         />
       ) : (
         <EmptyState

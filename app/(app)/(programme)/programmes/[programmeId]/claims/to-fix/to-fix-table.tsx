@@ -7,28 +7,69 @@ import { Tag } from "@/components/ui/tag"
 import { plural } from "@/lib/format"
 import { resultLabelTags, type ResultLabel } from "@/lib/programme-labels"
 import { ChaseDrawer } from "./chase-drawer"
+import { CheckDrawer } from "./check-drawer"
+
+export type FollowUp = { kind: "chased" | "checking" | "sent-back" | "accepted"; by: string; on: string }
 
 export type FixRow = {
   id: string
   participantRef: string
+  name: string | null
   from: string
+  ownDelivery: boolean
   result: string
+  noun: string
   label: ResultLabel
   why: string
   claim: { label: string; sendBy: string } | null
-  chased: { on: string; to: string } | null
+  waiting: number
+  followUp: FollowUp | null
   recipient: string
+  canChase: boolean
+  check: { by: string; on: string; note: string; evidence: string[] } | null
 }
 
 type ToFixTableProps = {
   programmeId: string
   rows: FixRow[]
-  canChase: boolean
+  total: number
 }
 
-export function ToFixTable({ programmeId, rows, canChase }: ToFixTableProps) {
+const followUpTags = {
+  checking: { label: "Sent for checking", tone: "info" },
+  "sent-back": { label: "Sent back", tone: "neutral" },
+  accepted: { label: "Accepted as is", tone: "ok" },
+} as const
+
+function FollowUpCell({ followUp }: { followUp: FollowUp | null }) {
+  if (!followUp) return <span className="text-grey-600">Not yet</span>
+
+  if (followUp.kind === "chased") {
+    return (
+      <>
+        <p className="text-grey-900">Chased {followUp.on}</p>
+        <p className="text-xs text-grey-700">{followUp.by}</p>
+      </>
+    )
+  }
+
+  const tag = followUpTags[followUp.kind]
+  return (
+    <div className="flex flex-col items-start gap-1">
+      <Tag tone={tag.tone}>{tag.label}</Tag>
+      <p className="text-xs text-grey-700">
+        {followUp.kind === "sent-back" ? `To ${followUp.by}` : followUp.by}, {followUp.on}
+      </p>
+    </div>
+  )
+}
+
+export function ToFixTable({ programmeId, rows, total }: ToFixTableProps) {
   const [selected, setSelected] = useState<string[]>([])
   const [chasing, setChasing] = useState<FixRow[] | null>(null)
+  const [checking, setChecking] = useState<FixRow | null>(null)
+  const chosen = rows.filter((row) => row.canChase && selected.includes(row.id))
+  const selectable = rows.some((row) => row.canChase)
 
   function toggle(id: string) {
     setSelected(selected.includes(id) ? selected.filter((item) => item !== id) : [...selected, id])
@@ -36,18 +77,14 @@ export function ToFixTable({ programmeId, rows, canChase }: ToFixTableProps) {
 
   return (
     <>
-      {canChase && selected.length > 0 && (
+      {chosen.length > 0 && (
         <div className="mb-3 flex items-center gap-3 rounded-lg border border-brand-200 bg-brand-50 py-2.5 pr-3 pl-4">
-          <p className="flex-1 text-sm font-semibold text-grey-900">{selected.length} selected</p>
+          <p className="flex-1 text-sm font-semibold text-grey-900">{chosen.length} selected</p>
           <Button variant="text" size="sm" onClick={() => setSelected([])}>
             Clear
           </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setChasing(rows.filter((row) => selected.includes(row.id)))}
-          >
-            Chase {selected.length}
+          <Button variant="secondary" size="sm" onClick={() => setChasing(chosen)}>
+            Chase {chosen.length}
           </Button>
         </div>
       )}
@@ -58,9 +95,10 @@ export function ToFixTable({ programmeId, rows, canChase }: ToFixTableProps) {
             <Th>Participant</Th>
             <Th>Result</Th>
             <Th>Label</Th>
-            <Th>Why</Th>
+            <Th>Reason</Th>
             <Th>For claim</Th>
-            <Th>Chased</Th>
+            <Th>Waiting</Th>
+            <Th>Follow-up</Th>
             <Th>
               <span className="sr-only">Actions</span>
             </Th>
@@ -69,23 +107,27 @@ export function ToFixTable({ programmeId, rows, canChase }: ToFixTableProps) {
         <tbody>
           {rows.map((row) => {
             const label = resultLabelTags[row.label]
+            const waiting = plural(row.waiting, "day")
 
             return (
               <tr key={row.id}>
                 <Td>
                   <div className="flex items-center gap-3">
-                    {canChase && (
-                      <input
-                        type="checkbox"
-                        aria-label={`Select ${row.participantRef}`}
-                        checked={selected.includes(row.id)}
-                        onChange={() => toggle(row.id)}
-                        className="size-[18px] shrink-0 cursor-pointer accent-brand-400"
-                      />
-                    )}
+                    {selectable &&
+                      (row.canChase ? (
+                        <input
+                          type="checkbox"
+                          aria-label={`Select ${row.participantRef}`}
+                          checked={selected.includes(row.id)}
+                          onChange={() => toggle(row.id)}
+                          className="size-[18px] shrink-0 cursor-pointer accent-brand-400"
+                        />
+                      ) : (
+                        <span className="size-[18px] shrink-0" />
+                      ))}
                     <div>
-                      <p className="font-semibold text-grey-900">{row.participantRef}</p>
-                      <p className="text-xs text-grey-700">{row.from}</p>
+                      <p className="font-semibold text-grey-900">{row.name ?? row.participantRef}</p>
+                      <p className="text-xs text-grey-700">{row.name ? `${row.participantRef}, ${row.from}` : row.from}</p>
                     </div>
                   </div>
                 </Td>
@@ -107,26 +149,26 @@ export function ToFixTable({ programmeId, rows, canChase }: ToFixTableProps) {
                     </>
                   )}
                 </Td>
+                <Td>{row.waiting >= 14 ? <Tag tone="warn">{waiting}</Tag> : waiting}</Td>
                 <Td>
-                  {row.chased ? (
-                    <>
-                      <p className="text-grey-900">{row.chased.on}</p>
-                      <p className="text-xs text-grey-700">{row.chased.to}</p>
-                    </>
-                  ) : (
-                    <span className="text-grey-600">Not yet</span>
-                  )}
+                  <FollowUpCell followUp={row.followUp} />
                 </Td>
                 <Td className="text-right">
-                  {canChase && (
-                    <Button
-                      variant={row.chased ? "text" : "secondary"}
-                      size="sm"
-                      aria-label={`Chase ${row.participantRef}`}
-                      onClick={() => setChasing([row])}
-                    >
-                      {row.chased ? "Chase again" : "Chase"}
+                  {row.check ? (
+                    <Button variant="secondary" size="sm" aria-label={`Check ${row.participantRef}`} onClick={() => setChecking(row)}>
+                      Check
                     </Button>
+                  ) : (
+                    row.canChase && (
+                      <Button
+                        variant={row.followUp?.kind === "chased" ? "text" : "secondary"}
+                        size="sm"
+                        aria-label={`Chase ${row.participantRef}`}
+                        onClick={() => setChasing([row])}
+                      >
+                        {row.followUp?.kind === "chased" ? "Chase again" : "Chase"}
+                      </Button>
+                    )
                   )}
                 </Td>
               </tr>
@@ -134,7 +176,9 @@ export function ToFixTable({ programmeId, rows, canChase }: ToFixTableProps) {
           })}
         </tbody>
       </Table>
-      <p className="mt-3 text-[13px] text-grey-700">Showing {plural(rows.length, "result")}</p>
+      <p className="mt-3 text-[13px] text-grey-700">
+        Showing {rows.length} of {plural(total, "result")}
+      </p>
 
       {chasing && (
         <ChaseDrawer
@@ -147,6 +191,7 @@ export function ToFixTable({ programmeId, rows, canChase }: ToFixTableProps) {
           }}
         />
       )}
+      {checking && <CheckDrawer programmeId={programmeId} row={checking} onClose={() => setChecking(null)} />}
     </>
   )
 }

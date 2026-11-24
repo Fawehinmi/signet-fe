@@ -1,4 +1,4 @@
-import type { Permission, ProgrammePosition, ProgrammeStatus } from "@/lib/session"
+import type { JobRole, Permission, ProgrammePosition, ProgrammeStatus } from "@/lib/session"
 
 export const positionLabels: Record<ProgrammePosition, string> = {
   prime: "Prime",
@@ -11,6 +11,12 @@ export const statusTags: Record<ProgrammeStatus, { label: string; tone: "ok" | "
   "rules-in-progress": { label: "Rules in progress", tone: "info" },
   "waiting-for-confirmation": { label: "Waiting for confirmation", tone: "info" },
   live: { label: "Live", tone: "ok" },
+}
+
+export const jobRoleLabels: Record<JobRole, string> = {
+  "partner-manager": "Partner manager",
+  "compliance-lead": "Compliance lead",
+  caseworker: "Caseworker",
 }
 
 export const permissionLabels: Record<Permission, string> = {

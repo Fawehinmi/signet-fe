@@ -7,12 +7,12 @@ export type CaseloadParticipant = {
 }
 
 export const evidenceTypes: { label: string; result: EvidenceResult; words: string[] }[] = [
-  { label: "Referral letter", result: "Start", words: ["referral"] },
-  { label: "Consent form", result: "Start", words: ["consent"] },
-  { label: "Start form", result: "Start", words: ["start"] },
-  { label: "Payslip", result: "Job outcome", words: ["payslip", "pay slip", "wage"] },
-  { label: "Invoice", result: "Job outcome", words: ["invoice", "trading"] },
-  { label: "Employer letter", result: "Job outcome", words: ["employer", "letter"] },
+  { label: "Referral letter", result: "Enrolled", words: ["referral"] },
+  { label: "Consent form", result: "Enrolled", words: ["consent"] },
+  { label: "Start form", result: "Onboarded", words: ["start"] },
+  { label: "Payslip", result: "Outcome", words: ["payslip", "pay slip", "wage"] },
+  { label: "Invoice", result: "Outcome", words: ["invoice", "trading"] },
+  { label: "Employer letter", result: "Outcome", words: ["employer", "letter"] },
 ]
 
 export type MatchStatus = "matched" | "check" | "needs-match" | "out"

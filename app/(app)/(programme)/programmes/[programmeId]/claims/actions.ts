@@ -10,20 +10,23 @@ import {
   getToFix,
   readyLabel,
   saveApproval,
+  saveCheckedAcceptance,
   saveDecision,
   saveLeftOut,
   saveSubmission,
 } from "@/lib/data/claims"
-import { saveChases } from "@/lib/data/results"
+import { clearCheck, getResult, saveChases, saveCheckAnswer } from "@/lib/data/results"
 import { today } from "@/lib/format"
 import { getProgrammePage } from "@/lib/programme-page"
 import {
   chaseSchema,
+  checkResultSchema,
   decideResultSchema,
   leaveOutSchema,
   signOffSchema,
   submitClaimSchema,
   type ChaseValues,
+  type CheckResultValues,
   type DecideResultValues,
   type LeaveOutValues,
   type SignOffValues,
@@ -43,9 +46,11 @@ async function findDraftItem(programmeId: string, periodId: string, resultId: st
 }
 
 export async function chaseResults(programmeId: string, values: ChaseValues) {
-  const { session, programme } = await getProgrammePage(programmeId, "claims")
-  if (programme.jobRole !== "compliance-lead") {
-    return { errors: { message: ["Only the Compliance lead can chase results."] } }
+  const { session, organisation, programme } = await getProgrammePage(programmeId, "claims")
+  const anyResult = programme.jobRole === "compliance-lead"
+  const ownDelivery = organisation.access === "admin"
+  if (!anyResult && !ownDelivery) {
+    return { errors: { message: ["Only the Compliance lead or an organisation admin can chase results."] } }
   }
 
   const parsed = chaseSchema.safeParse(values)
@@ -53,12 +58,50 @@ export async function chaseResults(programmeId: string, values: ChaseValues) {
     return { errors: z.flattenError(parsed.error).fieldErrors }
   }
 
-  const open = (await getToFix(programmeId)).map((row) => row.result.id)
+  const open = (await getToFix(programmeId))
+    .map((row) => row.result)
+    .filter((result) => !result.heldDecision && (anyResult || !result.partnerName))
+    .map((result) => result.id)
   if (parsed.data.resultIds.some((id) => !open.includes(id))) {
-    return { errors: { message: [`Some of these results don't need fixing now. ${refresh}`] } }
+    return { errors: { message: [`You can't chase some of these results now. ${refresh}`] } }
   }
 
   await saveChases(programmeId, parsed.data.resultIds, { by: session.user.name, on: today(), message: parsed.data.message })
+  refreshProgramme(programmeId)
+
+  return { errors: null }
+}
+
+export async function checkResult(programmeId: string, resultId: string, values: CheckResultValues) {
+  const { session, organisation } = await getProgrammePage(programmeId, "claims")
+
+  const result = await getResult(programmeId, resultId)
+  if (organisation.access !== "admin" || !result?.check || result.check.answer || result.label !== "needs-evidence") {
+    return { errors: { reason: [`You can't check this result now. ${refresh}`] } }
+  }
+
+  const parsed = checkResultSchema.safeParse(values)
+  if (!parsed.success) {
+    return { errors: z.flattenError(parsed.error).fieldErrors }
+  }
+
+  if (parsed.data.outcome === "send-back") {
+    await saveCheckAnswer(programmeId, resultId, { by: session.user.name, reason: parsed.data.reason })
+    refreshProgramme(programmeId)
+    return { errors: null }
+  }
+
+  const saved = await saveCheckedAcceptance(programmeId, resultId, {
+    kind: "accept-as-is",
+    reason: parsed.data.reason,
+    by: session.user.name,
+    on: today(),
+  })
+  if (!saved) {
+    return { errors: { reason: [`Its claim has already been submitted, so it can't be accepted now. ${refresh}`] } }
+  }
+
+  await clearCheck(programmeId, resultId)
   refreshProgramme(programmeId)
 
   return { errors: null }

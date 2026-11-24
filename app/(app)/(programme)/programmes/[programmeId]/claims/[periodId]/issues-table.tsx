@@ -33,10 +33,8 @@ export function IssuesTable({ programmeId, periodId, periodLabel, nextPeriodLabe
         <tr>
           <Th>Participant</Th>
           <Th>Label</Th>
-          <Th>Why</Th>
-          <Th>
-            <span className="sr-only">Decision</span>
-          </Th>
+          <Th>Reason</Th>
+          <Th className="text-right">Decision</Th>
         </tr>
       </thead>
       <tbody>

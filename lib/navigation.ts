@@ -76,9 +76,12 @@ export function programmeNavigation(session: Session, programme: ProgrammeMember
     return [
       home,
       dashboard,
+      ...when(has("bulk-import"), imports),
+      claims,
       participants,
       outcomeChecks,
       ...when(has("bulk-upload"), item("upload-evidence", "Upload evidence", "file-plus", "Upload")),
+
     ]
   }
 
@@ -108,7 +111,6 @@ export function programmeNavigation(session: Session, programme: ProgrammeMember
       rules,
       claims,
       proofPack,
-      item("follow-up", "Follow up", "message"),
       item("partners", "Our partners", "partners"),
       team,
       ...when(isAdmin, settings),

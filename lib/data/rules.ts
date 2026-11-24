@@ -39,7 +39,7 @@ export type ProgrammeRules = {
 
 function connectToWorkRules(area: string): Rule[] {
   return [
-    { heading: "Payment", text: "Claims pay per start and per job outcome." },
+    { heading: "Payment", text: "Claims pay per enrolment, onboarding and outcome. Changes to a closed claim come through as revisions." },
     {
       heading: "Who's eligible",
       text: `Lives in ${area}, aged 18 or over, with a referral recorded before the start date.`,
@@ -75,7 +75,7 @@ const rulesByProgramme: Record<string, ProgrammeRules> = {
     ],
   },
   "ctw-westmoor": {
-    status: "waiting-for-documents",
+    status: "waiting-for-confirmation",
     startedBy: "prime",
     version: 1,
     effectiveFrom: "2028-01-01",

@@ -27,12 +27,10 @@ export function ReadOnlyRules({ rules }: { rules: ProgrammeRules }) {
       />
       <Columns
         main={
-          <Section title="Rules summary">
+          <>
+            <Section title="Rules summary">
             <RulesSummary rules={rules.summary} />
           </Section>
-        }
-        side={
-          <>
             <Section title="Details">
               <DetailsList
                 items={[

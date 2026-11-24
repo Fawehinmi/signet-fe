@@ -137,77 +137,77 @@ export function PreviewStep({ programmeId, file, matching, confirming, onBack, o
 
       <Columns
         main={
-          <Section title="Ready to add">
-            {ready.length > 0 ? (
-              <>
-                <Table>
-                  <thead>
-                    <tr>
-                      <Th>Row</Th>
-                      {fields.map((field) => (
-                        <Th key={field.key}>{field.label}</Th>
-                      ))}
-                      <Th>Status</Th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ready.slice(0, shownRows).map((row) => (
-                      <tr key={row.row}>
-                        <Td>Row {row.row}</Td>
-                        {fields.map((field) => (
-                          <Td key={field.key}>
-                            {field.date && row.values[field.key] ? formatDate(row.values[field.key]) : row.values[field.key]}
-                          </Td>
-                        ))}
-                        <Td>
-                          <Tag tone="ok">Ready</Tag>
-                        </Td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-                <p className="mt-3 text-[13px] text-grey-700">
-                  Showing {Math.min(shownRows, ready.length)} of {plural(ready.length, "ready row")}
-                </p>
-              </>
-            ) : (
-              <p className="text-sm text-grey-700">
-                No rows are ready to add. Fix the problems in your file, then import it again.
-              </p>
-            )}
-            <div className="mt-6 flex justify-between gap-3 border-t border-grey-200 pt-4">
-              <Button variant="secondary" onClick={onBack}>
-                Back
-              </Button>
-              <Button disabled={ready.length === 0} onClick={onConfirm}>
-                Continue
-              </Button>
-            </div>
-          </Section>
-        }
-        side={
-          <Section title="Needs your attention">
-            {problems.length > 0 ? (
-              <div className="flex items-start gap-3">
-                <CircleAlert className="mt-0.5 size-5 shrink-0 text-warning-800" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-grey-900">
-                    {problems.length === 1 ? "1 row has a problem" : `${problems.length} rows have problems`}
-                  </p>
-                  <p className="text-sm text-grey-700">
-                    {problems.length === 1
-                      ? `Row ${problems[0].row}: ${problems[0].problem.toLowerCase()}. It'll be held back.`
-                      : "They'll be held back. Nothing is filled in for you."}
-                  </p>
+          <>
+            <Section title="Needs your attention">
+              {problems.length > 0 ? (
+                <div className="flex items-start gap-3">
+                  <CircleAlert className="mt-0.5 size-5 shrink-0 text-warning-800" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-grey-900">
+                      {problems.length === 1 ? "1 row has a problem" : `${problems.length} rows have problems`}
+                    </p>
+                    <p className="text-sm text-grey-700">
+                      {problems.length === 1
+                        ? `Row ${problems[0].row}: ${problems[0].problem.toLowerCase()}. It'll be held back.`
+                        : "They'll be held back. Nothing is filled in for you."}
+                    </p>
+                  </div>
+                  <Button variant="text" size="sm" onClick={() => setShowProblems(true)}>
+                    View
+                  </Button>
                 </div>
-                <Button variant="text" size="sm" onClick={() => setShowProblems(true)}>
-                  View
+              ) : (
+                <p className="text-sm text-grey-700">Nothing needs your attention. Every row is ready.</p>
+              )}
+            </Section>
+            <Section title="Ready to add">
+              {ready.length > 0 ? (
+                <>
+                  <Table>
+                    <thead>
+                      <tr>
+                        <Th>Row</Th>
+                        {fields.map((field) => (
+                          <Th key={field.key}>{field.label}</Th>
+                        ))}
+                        <Th>Status</Th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ready.slice(0, shownRows).map((row) => (
+                        <tr key={row.row}>
+                          <Td>Row {row.row}</Td>
+                          {fields.map((field) => (
+                            <Td key={field.key}>
+                              {field.date && row.values[field.key] ? formatDate(row.values[field.key]) : row.values[field.key]}
+                            </Td>
+                          ))}
+                          <Td>
+                            <Tag tone="ok">Ready</Tag>
+                          </Td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </Table>
+                  <p className="mt-3 text-[13px] text-grey-700">
+                    Showing {Math.min(shownRows, ready.length)} of {plural(ready.length, "ready row")}
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-grey-700">
+                  No rows are ready to add. Fix the problems in your file, then import it again.
+                </p>
+              )}
+              <div className="mt-6 flex justify-between gap-3 border-t border-grey-200 pt-4">
+                <Button variant="secondary" onClick={onBack}>
+                  Back
+                </Button>
+                <Button disabled={ready.length === 0} onClick={onConfirm}>
+                  Continue
                 </Button>
               </div>
-            ) : (
-              <p className="text-sm text-grey-700">Nothing needs your attention. Every row is ready.</p>
-            )}
-          </Section>
+            </Section>
+          </>
         }
       />
 

@@ -10,7 +10,7 @@ import { Table, Td, Th } from "@/components/ui/table"
 import { Tag } from "@/components/ui/tag"
 import type { CaseloadParticipant } from "@/lib/evidence-matching"
 import { resultLabelTags } from "@/lib/programme-labels"
-import { labelAfter, type ResultCheck } from "@/lib/result-checks"
+import { labelAfter, resultNouns, type ResultCheck } from "@/lib/result-checks"
 import type { UploadScope } from "@/lib/validations/evidence"
 import { isReady, type MatchRow } from "./match-files-step"
 
@@ -55,7 +55,7 @@ export function ReviewStep({ rows, inScope, scope, checks, scopeDetails, saving,
         <Banner
           key={check.resultId}
           tone="warn"
-          title={`${nameOf(check.participantRef)}'s ${check.result.toLowerCase()} is in a submitted claim`}
+          title={`${nameOf(check.participantRef)}'s ${resultNouns[check.result]} is in a submitted claim`}
           className="mb-4"
         >
           It&apos;s in the {check.claim?.periodLabel} claim, Version {check.claim?.version}, which hasn&apos;t been accepted
@@ -65,10 +65,10 @@ export function ReviewStep({ rows, inScope, scope, checks, scopeDetails, saving,
       {inAccepted.map(({ check }) => (
         <Banner
           key={check.resultId}
-          title={`${nameOf(check.participantRef)}'s ${check.result.toLowerCase()} is in an accepted claim`}
+          title={`${nameOf(check.participantRef)}'s ${resultNouns[check.result]} is in a closed claim`}
           className="mb-4"
         >
-          The {check.claim?.periodLabel} claim is closed, so confirming adds an adjustment to a later month&apos;s claim.
+          The {check.claim?.periodLabel} claim is closed, so confirming adds a revision to a later month&apos;s claim.
         </Banner>
       ))}
 
@@ -76,6 +76,21 @@ export function ReviewStep({ rows, inScope, scope, checks, scopeDetails, saving,
         <Columns
           main={
             <>
+              <Section title="This upload is for">
+                <DetailsList items={scopeDetails} />
+              </Section>
+              {unmatched.length > 0 && (
+                <Section title="Unmatched" count={unmatched.length}>
+                  <ul className="-mt-1 flex flex-col gap-3">
+                    {unmatched.map((row) => (
+                      <li key={row.id}>
+                        <p className="truncate text-sm font-semibold text-grey-900">{row.file.name}</p>
+                        <p className="text-sm text-grey-700">Goes to Unmatched. It affects nothing until it&apos;s matched.</p>
+                      </li>
+                    ))}
+                  </ul>
+                </Section>
+              )}
               <Section
                 title="Labels that will change"
                 description="Signet checks each result against the rules again when you confirm."
@@ -156,25 +171,6 @@ export function ReviewStep({ rows, inScope, scope, checks, scopeDetails, saving,
                   </Button>
                 </div>
               </Section>
-            </>
-          }
-          side={
-            <>
-              <Section title="This upload is for">
-                <DetailsList items={scopeDetails} />
-              </Section>
-              {unmatched.length > 0 && (
-                <Section title="Unmatched" count={unmatched.length}>
-                  <ul className="-mt-1 flex flex-col gap-3">
-                    {unmatched.map((row) => (
-                      <li key={row.id}>
-                        <p className="truncate text-sm font-semibold text-grey-900">{row.file.name}</p>
-                        <p className="text-sm text-grey-700">Goes to Unmatched. It affects nothing until it&apos;s matched.</p>
-                      </li>
-                    ))}
-                  </ul>
-                </Section>
-              )}
             </>
           }
         />

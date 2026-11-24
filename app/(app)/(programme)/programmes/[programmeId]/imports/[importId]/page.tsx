@@ -52,7 +52,8 @@ export default async function ImportPage({ params }: ImportPageProps) {
 
       <Columns
         main={
-          <Section title="Next steps">
+          <>
+            <Section title="Next steps">
             <ul className="-mt-4 flex flex-col">
               {complianceLead && (
                 <li className="flex items-start gap-3 border-b border-grey-200 py-3.5 last:border-b-0">
@@ -88,9 +89,6 @@ export default async function ImportPage({ params }: ImportPageProps) {
               )}
             </ul>
           </Section>
-        }
-        side={
-          <>
             <Section title="Import">
               <DetailsList
                 items={[
@@ -100,13 +98,6 @@ export default async function ImportPage({ params }: ImportPageProps) {
                 ]}
               />
             </Section>
-            {participants && (
-              <Section title="Participant details">
-                <p className="text-sm leading-[22px] text-grey-800">
-                  Participant names are hidden again now the import is done.
-                </p>
-              </Section>
-            )}
           </>
         }
       />

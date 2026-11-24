@@ -40,7 +40,8 @@ export function RulesReview({ rules, programme, organisationName, userName, canS
 
       <Columns
         main={
-          <Section
+          <>
+            <Section
             title="Rules summary"
             description={
               canSignOff
@@ -69,9 +70,6 @@ export function RulesReview({ rules, programme, organisationName, userName, canS
               </div>
             )}
           </Section>
-        }
-        side={
-          <>
             <Section title="Progress">
               <RulesProgress
                 rules={rules}

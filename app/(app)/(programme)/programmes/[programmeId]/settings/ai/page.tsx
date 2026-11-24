@@ -24,23 +24,23 @@ export default async function AiSettingsPage({ params }: AiSettingsPageProps) {
       <SettingsHeader programmeId={programmeId} active="ai" />
       <Columns
         main={
-          <Section title="AI features" description={`Only affects ${organisation.name}'s team on ${programme.name}.`}>
-            <AiFeaturesForm programmeId={programmeId} on={details.aiFeatures.on} disabled={Boolean(details.endedOn)} />
-          </Section>
-        }
-        side={
-          <Section title="About this setting">
-            <DetailsList
-              items={[
-                { label: "Applies to", value: "This programme only" },
-                { label: "Who can change this", value: "Organisation admins" },
-                {
-                  label: "Last changed",
-                  value: `${details.aiFeatures.changedBy}, ${formatDate(details.aiFeatures.changedOn)}`,
-                },
-              ]}
-            />
-          </Section>
+          <>
+            <Section title="AI features" description={`Only affects ${organisation.name}'s team on ${programme.name}.`}>
+              <AiFeaturesForm programmeId={programmeId} on={details.aiFeatures.on} disabled={Boolean(details.endedOn)} />
+            </Section>
+            <Section title="About this setting">
+              <DetailsList
+                items={[
+                  { label: "Applies to", value: "This programme only" },
+                  { label: "Who can change this", value: "Organisation admins" },
+                  {
+                    label: "Last changed",
+                    value: `${details.aiFeatures.changedBy}, ${formatDate(details.aiFeatures.changedOn)}`,
+                  },
+                ]}
+              />
+            </Section>
+          </>
         }
       />
     </>

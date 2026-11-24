@@ -24,7 +24,7 @@ const shared = [
   "Each result's proof pack",
   "Counts by payment type, including Own delivery",
   "Reasons for anything Accepted as is or Challenged, and who approved it",
-  "Adjustments to earlier claims",
+  "Revisions to closed claims",
 ]
 
 const kept = [
@@ -116,12 +116,10 @@ export default async function ClaimPreviewPage({ params }: ClaimPreviewPageProps
             <Section title="Counts by payment type">
               <ClaimCounts counts={countClaim(items, claim.adjustments, periods)} />
             </Section>
+            <Section title="What stays with you">
+              <DotList items={kept} tone="neutral" />
+            </Section>
           </>
-        }
-        side={
-          <Section title="What stays with you">
-            <DotList items={kept} tone="neutral" />
-          </Section>
         }
       />
     </>

@@ -25,7 +25,7 @@ export function AdjustmentsTable({ adjustments, periods }: { adjustments: Adjust
             </Td>
             <Td>
               <p className="text-grey-900">{periods.find((period) => period.id === adjustment.fromPeriodId)?.label}</p>
-              <p className="text-xs text-grey-700">Accepted</p>
+              <p className="text-xs text-grey-700">Closed</p>
             </Td>
             <Td className="min-w-[200px] whitespace-normal">
               <p className="text-grey-900">

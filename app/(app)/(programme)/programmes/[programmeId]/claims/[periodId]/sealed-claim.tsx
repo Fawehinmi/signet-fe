@@ -11,7 +11,7 @@ import { versionStatusTags } from "@/lib/claim-labels"
 import { getClaimPeriods, type Claim, type ClaimPeriod } from "@/lib/data/claims"
 import { formatDate, formatDateTime } from "@/lib/format"
 import { AdjustmentsTable } from "./adjustments-table"
-import { ClaimChanges } from "./claim-changes"
+import { ChangeSummary } from "./change-summary"
 import { ClaimCounts } from "./claim-counts"
 import { ClaimVersions } from "./claim-versions"
 import { LeftOutTable } from "./left-out-table"
@@ -33,6 +33,7 @@ export async function SealedClaim({ programmeId, period, claim, versions, commis
   const status = versionStatusTags[claim.status]
   const monthPath = `/programmes/${programmeId}/claims/${period.id}`
   const decided = claim.items.filter((item) => item.decision)
+  const previous = versions.find((version) => version.version === claim.version - 1)
 
   const description =
     claim.status === "submitted"
@@ -85,7 +86,7 @@ export async function SealedClaim({ programmeId, period, claim, versions, commis
       )}
       {claim.status === "accepted" && (
         <Banner tone="neutral" icon={Lock} title="This claim is closed" className="mb-8">
-          It can&apos;t be changed. Later changes come through as adjustments in a later month&apos;s claim.
+          It can&apos;t be changed. Later changes come through as revisions in a later month&apos;s claim.
         </Banner>
       )}
 
@@ -94,7 +95,7 @@ export async function SealedClaim({ programmeId, period, claim, versions, commis
           <>
             {claim.changes.length > 0 && (
               <Section title={`What changed since Version ${claim.version - 1}`} count={claim.changes.length}>
-                <ClaimChanges changes={claim.changes} />
+                <ChangeSummary version={claim.version} changes={claim.changes} before={previous?.counts ?? []} after={claim.counts} />
               </Section>
             )}
             {decided.length > 0 && (
@@ -103,7 +104,7 @@ export async function SealedClaim({ programmeId, period, claim, versions, commis
               </Section>
             )}
             {claim.adjustments.length > 0 && (
-              <Section title="Adjustments to earlier claims" count={claim.adjustments.length}>
+              <Section title="Revisions to closed claims" count={claim.adjustments.length}>
                 <AdjustmentsTable adjustments={claim.adjustments} periods={periods} />
               </Section>
             )}
@@ -115,10 +116,6 @@ export async function SealedClaim({ programmeId, period, claim, versions, commis
             <Section title="Counts by payment type">
               <ClaimCounts counts={claim.counts} />
             </Section>
-          </>
-        }
-        side={
-          <>
             {claim.accepted ? (
               <Section title="Receipt">
                 <DetailsList

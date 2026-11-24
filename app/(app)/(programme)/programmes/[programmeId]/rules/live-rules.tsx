@@ -56,12 +56,10 @@ export function LiveRules({ rules, programmeId, organisationId }: LiveRulesProps
 
       <Columns
         main={
-          <Section title="Rules summary">
+          <>
+            <Section title="Rules summary">
             <RulesSummary rules={rules.summary} />
           </Section>
-        }
-        side={
-          <>
             <Section title="Confirmations">
               <ul className="-mt-4 flex flex-col">
                 {rules.confirmations.map((confirmation) => (

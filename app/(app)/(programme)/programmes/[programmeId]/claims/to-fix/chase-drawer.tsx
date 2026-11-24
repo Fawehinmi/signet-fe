@@ -9,6 +9,7 @@ import { Banner } from "@/components/ui/banner"
 import { Button } from "@/components/ui/button"
 import { DetailsList } from "@/components/ui/details-list"
 import { joinNames } from "@/lib/claim-labels"
+import { plural } from "@/lib/format"
 import { resultLabelTags } from "@/lib/programme-labels"
 import { chaseSchema, type ChaseValues } from "@/lib/validations/claims"
 import { chaseResults } from "../actions"
@@ -50,10 +51,10 @@ export function ChaseDrawer({ programmeId, rows, onClose, onSent }: ChaseDrawerP
     <Drawer
       open
       onClose={onClose}
-      title={one ? `Chase ${one.participantRef}` : `Chase ${rows.length} results`}
+      title={one ? `Chase ${one.name ? `${one.name}'s ${one.noun}` : one.participantRef}` : `Chase ${rows.length} results`}
       description={
         one
-          ? `${one.result}, from ${one.from}. ${resultLabelTags[one.label].label}.`
+          ? `${one.participantRef}, ${one.ownDelivery ? "own delivery" : `from ${one.from}`}. ${resultLabelTags[one.label].label} for ${plural(one.waiting, "day")}.`
           : recipients.length === 1
             ? `The request goes to ${recipients[0]}.`
             : "Each request goes to the right person."
@@ -73,9 +74,11 @@ export function ChaseDrawer({ programmeId, rows, onClose, onSent }: ChaseDrawerP
         {one ? (
           <DetailsList
             items={[
-              { label: "Why", value: one.why || resultLabelTags[one.label].label },
+              { label: "Result", value: one.ownDelivery ? `${one.result}, own delivery` : `${one.result}, from ${one.from}` },
+              { label: "Reason", value: one.why || resultLabelTags[one.label].label },
+              { label: "Waiting", value: plural(one.waiting, "day") },
               { label: "Claim", value: one.claim ? `${one.claim.label}, send by ${one.claim.sendBy}` : "Next claim, once it's ready" },
-              { label: "Send to", value: one.recipient },
+              { label: "Send to", value: one.ownDelivery ? `${one.recipient}, their caseworker` : one.recipient },
             ]}
           />
         ) : (
@@ -96,12 +99,13 @@ export function ChaseDrawer({ programmeId, rows, onClose, onSent }: ChaseDrawerP
         <TextareaInput
           label="What's needed"
           rows={4}
-          helper={`${joinNames(recipients)} ${recipients.length === 1 ? "sees" : "see"} this message. Files go in through Upload evidence.`}
+          helper={`${joinNames(recipients)} ${recipients.length === 1 ? "sees" : "see"} this on the Upload evidence page.`}
           error={errors.message?.message ?? errors.resultIds?.message}
           {...register("message")}
         />
-        <Banner icon={Clock} title={`${one ? "It stays" : "They stay"} in To fix until the evidence arrives`}>
+        <Banner icon={Clock} title={`${one ? "It stays" : "They stay"} in Fixes until the evidence arrives`}>
           When the files are uploaded, Signet checks {one ? "the result" : "each result"} again.
+          {one?.ownDelivery && " If it still isn't accepted, the caseworker can send it to your organisation admin for checking."}
         </Banner>
       </form>
     </Drawer>

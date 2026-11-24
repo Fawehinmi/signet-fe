@@ -2,7 +2,6 @@ import Link from "next/link"
 import { buttonStyles } from "@/components/ui/button"
 import { Table, Td, Th } from "@/components/ui/table"
 import { Tag } from "@/components/ui/tag"
-import { monthStatusTags } from "@/lib/claim-labels"
 import type { ClaimMonth } from "@/lib/data/claims"
 import { addDays, formatDate, formatPeriod } from "@/lib/format"
 
@@ -10,11 +9,12 @@ type MonthsTableProps = {
   programmeId: string
   months: ClaimMonth[]
   viewer: { name: string; canDecide: boolean; canSignOff: boolean }
+  matches?: Record<string, string>
 }
 
 const needsCompliance = ["ready-to-review", "ready-to-submit", "sent-back"]
 
-export function MonthsTable({ programmeId, months, viewer }: MonthsTableProps) {
+export function MonthsTable({ programmeId, months, viewer, matches }: MonthsTableProps) {
   return (
     <Table>
       <thead>
@@ -31,14 +31,17 @@ export function MonthsTable({ programmeId, months, viewer }: MonthsTableProps) {
       </thead>
       <tbody>
         {months.map((month) => {
-          const status = monthStatusTags[month.status]
+          const closed = month.status === "accepted"
           const mine = viewer.canSignOff ? month.waiting.filter((item) => item.decision?.by !== viewer.name).length : 0
           const yourTurn = mine > 0 || (viewer.canDecide && needsCompliance.includes(month.status))
-          const note =
-            mine > 0
+          const note = matches?.[month.period.id]
+            ? matches[month.period.id]
+            : mine > 0
               ? `${mine} need${mine === 1 ? "s" : ""} your Sign-off`
               : month.issues > 0
-                ? `${month.issues} ${month.latest ? "with issues" : "not ready"}`
+                ? month.latest
+                  ? `${month.issues} ${month.issues === 1 ? "fix" : "fixes"}`
+                  : `${month.issues} not ready`
                 : null
 
           return (
@@ -48,7 +51,7 @@ export function MonthsTable({ programmeId, months, viewer }: MonthsTableProps) {
                 <p className="text-xs text-grey-700">{formatPeriod(month.period.start, month.period.end)}</p>
               </Td>
               <Td>
-                <Tag tone={status.tone}>{status.label}</Tag>
+                <Tag tone={closed ? "ok" : "neutral"}>{closed ? "Closed" : "Open"}</Tag>
               </Td>
               <Td>
                 {month.latest ? (

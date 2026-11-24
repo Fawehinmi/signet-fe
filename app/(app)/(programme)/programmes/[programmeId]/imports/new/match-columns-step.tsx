@@ -44,7 +44,6 @@ function startingMatch(file: ImportFile, aiOn: boolean, saved: Record<string, st
 export function MatchColumnsStep({ file, aiOn, saved, initial, onBack, onContinue }: MatchColumnsStepProps) {
   const start = startingMatch(file, aiOn, saved)
   const fields = importFields[file.type]
-  const usedSaved = Object.keys(start.sources).some((key) => start.sources[key] === "saved")
 
   const {
     register,
@@ -61,7 +60,13 @@ export function MatchColumnsStep({ file, aiOn, saved, initial, onBack, onContinu
   return (
     <Columns
       main={
-        <Section title="Match columns" description="Check each match. Nothing is imported until you confirm.">
+        <Section
+          title="Match columns"
+          description={`Check each match. Nothing is imported until you confirm. Required: ${fields
+            .filter((field) => field.required)
+            .map((field) => field.label)
+            .join(", ")}.`}
+        >
           <form onSubmit={handleSubmit(onContinue)} noValidate className="flex flex-col gap-5">
             <Table>
               <thead>
@@ -125,21 +130,6 @@ export function MatchColumnsStep({ file, aiOn, saved, initial, onBack, onContinu
               <Button type="submit">Continue</Button>
             </div>
           </form>
-        </Section>
-      }
-      side={
-        <Section title={aiOn ? "Suggested matches" : "Matching columns"}>
-          <p className="text-sm leading-[22px] text-grey-800">
-            {aiOn
-              ? "AI features are on for this programme, so matches are suggested. You confirm each one. With AI features off, you match columns yourself."
-              : "AI features are off for this programme, so you match each column yourself."}
-          </p>
-          {usedSaved && (
-            <p className="mt-3 text-sm leading-[22px] text-grey-800">Matches marked Saved come from your last import.</p>
-          )}
-          <p className="mt-3 text-sm leading-[22px] text-grey-800">
-            Required: {fields.filter((field) => field.required).map((field) => field.label).join(", ")}.
-          </p>
         </Section>
       }
     />

@@ -1,3 +1,5 @@
+import { getMemberships } from "@/lib/data/team"
+
 export type OrganisationType = "provider" | "commissioner"
 export type OrganisationAccess = "admin" | "member"
 export type ProgrammePosition = "prime" | "subcontractor" | "commissioner"
@@ -44,42 +46,43 @@ const westmoor = {
   status: "waiting-for-confirmation",
 } as const
 
-const demoSessions: Record<"priya" | "marcus" | "ruth" | "tom", Session> = {
+const programmesByOrganisation: Record<string, Omit<ProgrammeMembership, "jobRole" | "permissions">[]> = {
+  "meridian-employment": [northshire, westmoor],
+}
+
+const demoPeople: Record<"priya" | "marcus" | "ruth" | "tom", Omit<Session, "programmes">> = {
   priya: {
     user: { name: "Priya Nair", email: "priya.nair@meridianemployment.co.uk" },
     organisation: { ...meridian, access: "admin" },
-    programmes: [
-      { ...northshire, jobRole: "partner-manager", permissions: [] },
-      { ...westmoor, jobRole: "partner-manager", permissions: [] },
-    ],
   },
   marcus: {
     user: { name: "Marcus Webb", email: "marcus.webb@meridianemployment.co.uk" },
     organisation: { ...meridian, access: "member" },
-    programmes: [
-      { ...northshire, jobRole: "partner-manager", permissions: ["sign-off", "bulk-import"] },
-      { ...westmoor, jobRole: "partner-manager", permissions: ["sign-off"] },
-    ],
   },
   ruth: {
     user: { name: "Ruth Adeyemi", email: "ruth.adeyemi@meridianemployment.co.uk" },
     organisation: { ...meridian, access: "member" },
-    programmes: [
-      { ...northshire, jobRole: "compliance-lead", permissions: [] },
-      { ...westmoor, jobRole: "compliance-lead", permissions: [] },
-    ],
   },
   tom: {
     user: { name: "Tom Okafor", email: "tom.okafor@meridianemployment.co.uk" },
     organisation: { ...meridian, access: "member" },
-    programmes: [{ ...northshire, jobRole: "caseworker", permissions: ["bulk-upload"] }],
   },
 }
 
 const demoUser = "priya"
 
 export async function getSession(): Promise<Session | null> {
-  return demoSessions[demoUser]
+  const person = demoPeople[demoUser]
+  const programmes = person.organisation ? (programmesByOrganisation[person.organisation.id] ?? []) : []
+  const memberships = getMemberships(person.user.email)
+
+  return {
+    ...person,
+    programmes: programmes.flatMap((programme) => {
+      const membership = memberships.find((item) => item.programmeId === programme.id)
+      return membership ? [{ ...programme, jobRole: membership.jobRole, permissions: [...membership.permissions] }] : []
+    }),
+  }
 }
 
 export async function getSessionEmail() {

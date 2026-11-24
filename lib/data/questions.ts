@@ -24,7 +24,7 @@ const questionsByProgramme: Record<string, CommissionerQuestion[]> = {
       askedOn: "2027-09-12",
       question: "Can you confirm the start date for NS-0187? The start form and the referral don't match.",
       participantRef: "NS-0187",
-      result: "Start",
+      result: "Onboarded",
       periodId: "2027-08",
       files: ["NS-0187_start_form.pdf", "NS-0187_referral_letter.pdf"],
     },
@@ -35,7 +35,7 @@ const questionsByProgramme: Record<string, CommissionerQuestion[]> = {
       askedOn: "2027-09-11",
       question: "Is NS-0416's employer the same one named on the payslips?",
       participantRef: "NS-0416",
-      result: "Job outcome",
+      result: "Outcome",
       periodId: "2027-08",
       files: ["NS-0416_employer_letter.pdf", "NS-0416_payslip_aug.pdf"],
       answer: {

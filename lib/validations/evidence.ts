@@ -4,7 +4,7 @@ const allowedFile = /\.(pdf|jpe?g|png|heic|docx?)$/i
 const maxFileSize = 10 * 1024 * 1024
 const maxTotalSize = 30 * 1024 * 1024
 
-export const evidenceResults = ["Start", "Job outcome"] as const
+export const evidenceResults = ["Enrolled", "Onboarded", "Outcome"] as const
 export type EvidenceResult = (typeof evidenceResults)[number]
 
 export const uploadScopeSchema = z
@@ -56,3 +56,9 @@ export const uploadRequestSchema = z.object({
 })
 
 export type UploadRequest = z.infer<typeof uploadRequestSchema>
+
+export const sendForCheckingSchema = z.object({
+  note: z.string().trim().min(1, "Say what they should know").max(1000, "Keep it under 1,000 characters"),
+})
+
+export type SendForCheckingValues = z.infer<typeof sendForCheckingSchema>

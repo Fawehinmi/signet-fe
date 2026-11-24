@@ -14,6 +14,7 @@ import { getUploadPool, getUpload } from "@/lib/data/evidence"
 import { describeScope } from "@/lib/evidence-matching"
 import { formatDate, formatDateTime } from "@/lib/format"
 import { getProgrammePage } from "@/lib/programme-page"
+import { resultNouns } from "@/lib/result-checks"
 
 type UploadPageProps = {
   params: Promise<{ programmeId: string; uploadId: string }>
@@ -41,7 +42,7 @@ export default async function UploadPage({ params }: UploadPageProps) {
         const types = [...new Set(files.filter((file) => file.result === result).map((file) => file.evidenceType))]
         return {
           key: `${participant.ref}-${result}`,
-          title: `${participant.name}'s ${result.toLowerCase()} has new evidence`,
+          title: `${participant.name}'s ${resultNouns[result]} has new evidence`,
           detail: `${types.join(" and ")} added.`,
         }
       }),
@@ -67,70 +68,69 @@ export default async function UploadPage({ params }: UploadPageProps) {
 
       <Columns
         main={
-          <Section title="What changed">
-            <ul className="-mt-4 flex flex-col">
-              {upload.changes.map((change, index) => (
-                <li key={`${change.title}-${index}`} className="flex items-start gap-3 border-b border-grey-200 py-3.5 last:border-b-0">
-                  {change.kind === "label" ? (
-                    <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-success-50">
-                      <Check className="size-3.5 text-success-800" strokeWidth={3} />
-                    </span>
-                  ) : (
-                    <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-brand-50">
-                      <Inbox className="size-3.5 text-brand-600" />
-                    </span>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-grey-900">{change.title}</p>
-                    <p className="text-sm text-grey-700">{change.detail}</p>
-                  </div>
-                  {change.kind === "label" ? <Tag tone="ok">Label changed</Tag> : <Tag tone="info">Claim</Tag>}
-                </li>
-              ))}
-              {evidence.map((item) => (
-                <li key={item.key} className="flex items-start gap-3 border-b border-grey-200 py-3.5 last:border-b-0">
-                  <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-grey-100">
-                    <Check className="size-3.5 text-grey-700" strokeWidth={3} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-grey-900">{item.title}</p>
-                    <p className="text-sm text-grey-700">{item.detail}</p>
-                  </div>
-                  <Tag tone="neutral">Evidence added</Tag>
-                </li>
-              ))}
-            </ul>
-          </Section>
-        }
-        side={
           <>
-            <Section title="This upload was for">
-              <DetailsList
-                items={
-                  upload.scope.kind === "participant"
-                    ? [{ label: "Participant", value: scope.people }]
-                    : [
-                        { label: "Month", value: scope.month ?? "Whole programme" },
-                        { label: "Participants", value: scope.people },
-                      ]
-                }
-              />
+            <Section title="What changed">
+              <ul className="-mt-4 flex flex-col">
+                {upload.changes.map((change, index) => (
+                  <li key={`${change.title}-${index}`} className="flex items-start gap-3 border-b border-grey-200 py-3.5 last:border-b-0">
+                    {change.kind === "label" ? (
+                      <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-success-50">
+                        <Check className="size-3.5 text-success-800" strokeWidth={3} />
+                      </span>
+                    ) : (
+                      <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-brand-50">
+                        <Inbox className="size-3.5 text-brand-600" />
+                      </span>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-grey-900">{change.title}</p>
+                      <p className="text-sm text-grey-700">{change.detail}</p>
+                    </div>
+                    {change.kind === "label" ? <Tag tone="ok">Label changed</Tag> : <Tag tone="info">Claim</Tag>}
+                  </li>
+                ))}
+                {evidence.map((item) => (
+                  <li key={item.key} className="flex items-start gap-3 border-b border-grey-200 py-3.5 last:border-b-0">
+                    <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-grey-100">
+                      <Check className="size-3.5 text-grey-700" strokeWidth={3} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-grey-900">{item.title}</p>
+                      <p className="text-sm text-grey-700">{item.detail}</p>
+                    </div>
+                    <Tag tone="neutral">Evidence added</Tag>
+                  </li>
+                ))}
+              </ul>
             </Section>
-            {upload.unmatched.length > 0 && (
-              <Section title="Unmatched" count={upload.unmatched.length}>
-                <ul className="-mt-1 flex flex-col gap-3">
-                  {upload.unmatched.map((file) => (
-                    <li key={file.name}>
-                      <p className="truncate text-sm font-semibold text-grey-900">{file.name}</p>
-                      <p className="text-sm text-grey-700">{file.reason}</p>
-                    </li>
-                  ))}
-                </ul>
-                <Link href={uploadsPath} className={cn(buttonStyles({ variant: "secondary", size: "sm" }), "mt-4")}>
-                  Match from Upload evidence
-                </Link>
+              <Section title="This upload was for">
+                <DetailsList
+                  items={
+                    upload.scope.kind === "participant"
+                      ? [{ label: "Participant", value: scope.people }]
+                      : [
+                          { label: "Month", value: scope.month ?? "Whole programme" },
+                          { label: "Participants", value: scope.people },
+                        ]
+                  }
+                />
               </Section>
-            )}
+              {upload.unmatched.length > 0 && (
+                <Section title="Unmatched" count={upload.unmatched.length}>
+                  <ul className="-mt-1 flex flex-col gap-3">
+                    {upload.unmatched.map((file) => (
+                      <li key={file.name}>
+                        <p className="truncate text-sm font-semibold text-grey-900">{file.name}</p>
+                        <p className="text-sm text-grey-700">{file.reason}</p>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link href={uploadsPath} className={cn(buttonStyles({ variant: "secondary", size: "sm" }), "mt-4")}>
+                    Match from Upload evidence
+                  </Link>
+                </Section>
+              )}
+
           </>
         }
       />

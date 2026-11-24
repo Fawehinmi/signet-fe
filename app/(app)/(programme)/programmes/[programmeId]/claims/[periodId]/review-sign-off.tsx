@@ -102,7 +102,7 @@ export function ReviewSignOff({ programmeId, periodId, periodLabel, item, askedO
                 label: "Approve",
                 description: `It counts in the claim, marked ${labels.done}. The commissioner sees the reason.`,
               },
-              { value: "reject", label: "Reject", description: "It's left out of the claim and goes back to To fix." },
+              { value: "reject", label: "Reject", description: "It's left out of the claim and goes back to Fixes." },
             ]}
             error={errors.outcome?.message}
             {...register("outcome")}

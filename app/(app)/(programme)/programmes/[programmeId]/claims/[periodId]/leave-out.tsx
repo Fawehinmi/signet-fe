@@ -80,7 +80,7 @@ export function LeaveOut({ programmeId, periodId, periodLabel, nextPeriodLabel, 
             legend="What happens to it?"
             stacked
             options={[
-              { value: "to-fix", label: "Back to To fix", description: "Keep chasing it. It goes in the next claim once it's ready." },
+              { value: "to-fix", label: "Back to Fixes", description: "Keep chasing it. It goes in the next claim once it's ready." },
               ...(nextPeriodLabel
                 ? [
                     {
