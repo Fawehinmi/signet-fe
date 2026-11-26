@@ -24,8 +24,8 @@ export async function SentBackClaim({ programmeId, claim, period, commissioner }
   const versions = await getPeriodClaims(programmeId, period.id)
   const latest = versions[0]
   const newer = latest && latest.version > claim.version ? latest : null
-  const fixes = claim.sentBack?.fixes ?? []
-  const allFixed = fixes.every((fix) => fix.fixedOn)
+  const fixes = claim.sentBack?.flagged ?? []
+  const allFixed = fixes.length === 0
   const claimsPath = `/programmes/${programmeId}/claims`
 
   return (
@@ -71,13 +71,11 @@ export async function SentBackClaim({ programmeId, claim, period, commissioner }
                         {fix.problem.slice(1)}
                       </p>
                       <p className="text-sm text-grey-700">
-                        {fix.result}, from {fix.partnerName}.{" "}
-                        {fix.fixedOn
-                          ? `${fix.partnerName} sent it again on ${formatDate(fix.fixedOn)}.`
-                          : `Waiting for ${fix.partnerName} to send it again.`}
+                        {fix.result}, from {fix.partnerName ?? "own delivery"}.{" "}
+                        Waiting for it to be fixed.
                       </p>
                     </div>
-                    {fix.fixedOn ? <Tag tone="ok">Verified now</Tag> : <Tag tone="warn">Not fixed yet</Tag>}
+                    <Tag tone="warn">Not fixed yet</Tag>
                   </li>
                 ))}
               </ul>
@@ -88,7 +86,7 @@ export async function SentBackClaim({ programmeId, claim, period, commissioner }
                   {
                     label:
                       fixes.length === 1
-                        ? `${fixes[0].partnerName} sends ${fixes[0].participantRef} again`
+                        ? `${fixes[0]?.partnerName ?? "Partner"} sends ${fixes[0]?.participantRef} again`
                         : "Partners send the results again",
                     state: allFixed ? "done" : "current",
                   },

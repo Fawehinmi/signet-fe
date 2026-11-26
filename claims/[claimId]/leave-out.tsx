@@ -7,7 +7,6 @@ import { Dialog } from "@/components/app/dialog"
 import { RadioGroup } from "@/components/form/radio-group"
 import { TextareaInput } from "@/components/form/textarea-input"
 import { Button } from "@/components/ui/button"
-import type { ClaimResult } from "@/lib/data/claims"
 import { leaveOutSchema, type LeaveOutValues } from "@/lib/validations/claims"
 import { leaveOutResult } from "../actions"
 
@@ -16,7 +15,7 @@ type LeaveOutProps = {
   claimId: string
   periodLabel: string
   nextPeriodLabel?: string
-  result: ClaimResult
+  result: { id: string; participantRef: string; partnerName: string | null }
 }
 
 export function LeaveOut({ programmeId, claimId, periodLabel, nextPeriodLabel, result }: LeaveOutProps) {
@@ -29,9 +28,9 @@ export function LeaveOut({ programmeId, claimId, periodLabel, nextPeriodLabel, r
     reset,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm({
+  } = useForm<LeaveOutValues>({
     resolver: zodResolver(leaveOutSchema),
-    defaultValues: { action: "move" as const, reason: "" },
+    defaultValues: { to: "next-month", reason: "" },
   })
 
   function openDialog() {
@@ -75,24 +74,24 @@ export function LeaveOut({ programmeId, claimId, periodLabel, nextPeriodLabel, r
       >
         <form id={formId} onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
           <p className="text-sm leading-[22px] text-grey-800">
-            It won&apos;t be in the {periodLabel} claim. We&apos;ll tell {result.partnerName} why.
+            It won&apos;t be in the {periodLabel} claim. We&apos;ll tell {result.partnerName ?? "partner"} why.
           </p>
           <RadioGroup
             legend="What happens to it?"
             options={[
               {
-                value: "move",
+                value: "next-month",
                 label: nextPeriodLabel ? `Move it to the ${nextPeriodLabel} claim` : "Move it to the next claim",
               },
-              { value: "return", label: `Return it to ${result.partnerName}` },
+              { value: "to-fix", label: `Return it to ${result.partnerName ?? "partner"}` },
             ]}
-            error={errors.action?.message}
-            {...register("action")}
+            error={errors.to?.message}
+            {...register("to")}
           />
           <TextareaInput
             label="Reason"
             rows={3}
-            helper={`Required. ${result.partnerName} will see this.`}
+            helper={`Required. ${result.partnerName ?? "Partner"} will see this.`}
             error={errors.reason?.message}
             {...register("reason")}
           />

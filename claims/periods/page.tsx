@@ -36,11 +36,11 @@ export default async function ClaimPeriodsPage({ params }: ClaimPeriodsPageProps
             programmeId={programmeId}
             periods={[...periods].reverse()}
             claims={claims}
-            canChangeDates={programme.jobRole === "partner-manager"}
+            canChangeDates={programme.jobRole === "programme-manager"}
           />
           <p className="mt-3 text-[13px] text-grey-700">Showing {plural(periods.length, "period")}</p>
           <p className="mt-2 text-[13px] text-grey-700">
-            Partner managers set send-by dates. Your partners see them, so they know when to send results.
+            Programme managers set send-by dates. Your partners see them, so they know when to send results.
           </p>
         </>
       ) : (

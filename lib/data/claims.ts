@@ -17,7 +17,7 @@ import {
 import { resultKinds, resultNouns } from "@/lib/result-checks"
 import type { DecideResultValues, LeaveOutValues } from "@/lib/validations/claims"
 
-export type ClaimStatus = "draft" | "submitted" | "replaced" | "sent-back" | "accepted"
+export type ClaimStatus = "draft" | "waiting-for-sign-off" | "submitted" | "replaced" | "sent-back" | "accepted"
 export type DraftStage = "ready-to-review" | "waiting-for-sign-off" | "ready-to-submit"
 export type MonthStatus = "open" | DraftStage | "submitted" | "sent-back" | "accepted"
 
@@ -86,6 +86,15 @@ export type FlaggedResult = {
   problem: string
 }
 
+export type ClaimResult = {
+  id: string
+  participantRef: string
+  result: ResultKind
+  partnerName: string | null
+  label: ResultLabel
+  why: string
+}
+
 export type Claim = {
   id: string
   periodId: string
@@ -104,6 +113,8 @@ export type Claim = {
   sentBack?: { by: string; on: string; reason: string; flagged: FlaggedResult[] }
   accepted?: { by: string; organisation: string; on: string; receiptNumber: string }
   replacedBy?: number
+  builtBy?: string
+  builtOn?: string
 }
 
 export type ClaimEffect = {
@@ -348,6 +359,10 @@ function monthStatus(claim: Claim, items: ClaimItem[]): MonthStatus {
 
 export function claimTotal(counts: ClaimCount[]) {
   return counts.reduce((total, count) => total + count.fromPartners + count.ownDelivery, 0)
+}
+
+export function adjustmentTotal(claim: Claim) {
+  return claim.adjustments.reduce((total, item) => total + Math.abs(item.count), 0)
 }
 
 export async function getClaimPeriods(programmeId: string) {
@@ -640,4 +655,69 @@ export async function applyLabelChange(programmeId: string, change: LabelChange)
   })
 
   return { kind: target.kept ? "adjustment" : "adjustment-removed", periodLabel: target.period?.label ?? "next month's" }
+}
+
+export async function getClaims(programmeId: string) {
+  await draftEndedMonths(programmeId)
+  return claimsFor(programmeId).sort((a, b) => b.version - a.version || b.periodId.localeCompare(a.periodId))
+}
+
+export async function getClaim(programmeId: string, claimId: string) {
+  await draftEndedMonths(programmeId)
+  return claimsFor(programmeId).find((claim) => claim.id === claimId) ?? null
+}
+
+export async function getNextPeriodToClaim(programmeId: string) {
+  await draftEndedMonths(programmeId)
+  const periods = await getClaimPeriods(programmeId)
+  for (const period of periods) {
+    const latest = await getLatestClaim(programmeId, period.id)
+    if (!latest) return period
+  }
+  return null
+}
+
+export async function createClaim(programmeId: string, periodId: string, _by: string) {
+  await draftEndedMonths(programmeId)
+  const existing = await getLatestClaim(programmeId, periodId)
+  if (existing) return existing
+
+  const claim = addClaim(programmeId, {
+    ...blankClaim(periodId, 1, "month-ended"),
+    decisions: await takeHeldDecisions(programmeId, periodId),
+    adjustments: pendingAdjustments[programmeId] ?? [],
+  })
+  pendingAdjustments[programmeId] = []
+  return claim
+}
+
+export async function createNewVersion(programmeId: string, claimId: string, _by: string) {
+  const claim = await getClaim(programmeId, claimId)
+  if (!claim || claim.status !== "sent-back") return null
+
+  const newClaim = draftNewVersion(programmeId, claim, "", [])
+  return newClaim
+}
+
+export async function saveLeftOutResult(
+  programmeId: string,
+  claimId: string,
+  resultId: string,
+  values: LeaveOutValues,
+) {
+  const claim = await getClaim(programmeId, claimId)
+  if (!claim) return
+  await saveLeftOut(programmeId, claim.periodId, resultId, values, "")
+}
+
+export async function saveSendByDate(programmeId: string, periodId: string, sendBy: string) {
+  const periods = periodsByProgramme[programmeId]
+  if (!periods) return
+  const period = periods.find((p) => p.id === periodId)
+  if (period) period.sendBy = sendBy
+}
+
+export async function saveSentForSignOff(_programmeId: string, _claimId: string) {
+  // In this demo app, "sending for sign-off" is handled by the draft stage logic.
+  // No-op — the draftStage function computes the stage from items automatically.
 }

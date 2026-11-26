@@ -7,6 +7,7 @@ import {
   createClaim,
   createNewVersion,
   getClaim,
+  getClaimItems,
   getNextPeriodToClaim,
   getPeriod,
   getPeriodClaims,
@@ -44,7 +45,8 @@ export async function leaveOutResult(programmeId: string, claimId: string, resul
   await getProgrammePage(programmeId, "claims")
 
   const claim = await getClaim(programmeId, claimId)
-  if (claim?.status !== "draft" || !claim.results.some((result) => result.id === resultId)) {
+  const items = claim ? await getClaimItems(programmeId, claim) : []
+  if (claim?.status !== "draft" || !items.some((item) => item.resultId === resultId)) {
     return { errors: { reason: ["This result can't be left out now. Refresh the page to see the latest."] } }
   }
 
@@ -76,9 +78,8 @@ export async function submitClaim(programmeId: string, claimId: string, values: 
 
   const claim = await getClaim(programmeId, claimId)
   const canSubmit =
-    claim?.status === "waiting-for-sign-off" &&
-    programme.permissions.includes("sign-off") &&
-    claim.builtBy !== session.user.name
+    claim?.status === "draft" &&
+    programme.permissions.includes("sign-off")
 
   if (!canSubmit) {
     return { errors: { confirmed: ["You can't submit this claim. Refresh the page to see the latest."] } }
@@ -89,7 +90,7 @@ export async function submitClaim(programmeId: string, claimId: string, values: 
     return { errors: z.flattenError(parsed.error).fieldErrors }
   }
 
-  await saveSubmission(programmeId, claimId, session.user.name)
+  await saveSubmission(programmeId, claim.periodId, session.user.name)
   revalidatePath(claimsPath(programmeId), "layout")
   redirect(`${claimsPath(programmeId, claimId)}?submitted=1`)
 }
@@ -112,8 +113,8 @@ export async function changeSendByDate(programmeId: string, periodId: string, va
   const { programme } = await getProgrammePage(programmeId, "claims")
 
   const period = await getPeriod(programmeId, periodId)
-  if (!period || programme.jobRole !== "partner-manager") {
-    return { errors: { sendBy: ["Only Partner managers can change send-by dates"] } }
+  if (!period || programme.jobRole !== "programme-manager") {
+    return { errors: { sendBy: ["Only Programme managers can change send-by dates"] } }
   }
 
   const parsed = sendByDateSchema.safeParse(values)

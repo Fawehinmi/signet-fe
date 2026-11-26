@@ -29,7 +29,7 @@ export function CheckDrawer({ programmeId, row, onClose }: CheckDrawerProps) {
     setError,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm({
+  } = useForm<CheckResultValues>({
     resolver: zodResolver(checkResultSchema),
     defaultValues: { outcome: "accept-as-is", reason: "" },
   })

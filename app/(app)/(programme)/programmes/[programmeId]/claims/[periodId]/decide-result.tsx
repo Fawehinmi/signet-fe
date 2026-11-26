@@ -28,7 +28,7 @@ export function DecideResult({ programmeId, periodId, item }: DecideResultProps)
     reset,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm({
+  } = useForm<DecideResultValues>({
     resolver: zodResolver(decideResultSchema),
     defaultValues: { kind, reason: "" },
   })

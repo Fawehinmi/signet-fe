@@ -53,7 +53,7 @@ export function AppShell({ sidebar, topBar, bottomTabs, children }: AppShellProp
           </button>
           {topBar}
         </header>
-        <main className={cn("flex-1 px-4 py-6 lg:px-12 lg:pt-8 lg:pb-10", bottomTabs && "pb-28")}>{children}</main>
+        <main className={cn("flex-1 px-4 py-6 lg:px-12 lg:pt-8 lg:pb-10", Boolean(bottomTabs) && "pb-28")}>{children}</main>
       </div>
 
       {bottomTabs}

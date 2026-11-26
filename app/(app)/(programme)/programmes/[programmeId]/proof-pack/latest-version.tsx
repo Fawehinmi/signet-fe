@@ -8,7 +8,7 @@ export function LatestVersion({ row, programme }: { row: ProofPackRow; programme
     { label: "Programme", value: programme },
     { label: "Period covered", value: row.covers },
     { label: "Results included", value: row.results },
-    { label: "Delivered by", value: row.deliveredBy },
+    { label: "What changed", value: row.change },
   ]
 
   return (

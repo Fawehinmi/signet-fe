@@ -49,7 +49,7 @@ export async function GET(_request: Request, { params }: ReceiptContext) {
       (count) =>
         `${count.label}: ${count.fromPartners} from partners, ${count.ownDelivery} own delivery, ${count.fromPartners + count.ownDelivery} in total`,
     ),
-    `Results: ${claimTotal(claim)}`,
+    `Results: ${claimTotal(claim.counts)}`,
   ]
 
   return new Response(lines.join("\n"), {

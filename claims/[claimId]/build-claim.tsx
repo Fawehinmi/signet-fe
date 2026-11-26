@@ -6,7 +6,7 @@ import { Button, buttonStyles } from "@/components/ui/button"
 import { DetailsList } from "@/components/ui/details-list"
 import { Table, Td, Th } from "@/components/ui/table"
 import { Tag } from "@/components/ui/tag"
-import { claimTotal, getNextPeriod, getPeriodClaims, type Claim, type ClaimPeriod } from "@/lib/data/claims"
+import { claimTotal, getClaimItems, getNextPeriod, getPeriodClaims, type Claim, type ClaimPeriod } from "@/lib/data/claims"
 import { formatDate, formatPeriod, plural, today } from "@/lib/format"
 import { sendForSignOff } from "../actions"
 import { ClaimChanges } from "./claim-changes"
@@ -20,13 +20,14 @@ type BuildClaimProps = {
 }
 
 export async function BuildClaim({ programmeId, claim, period }: BuildClaimProps) {
-  const [versions, nextPeriod] = await Promise.all([
+  const [versions, nextPeriod, results] = await Promise.all([
     getPeriodClaims(programmeId, period.id),
     getNextPeriod(programmeId, period.id),
+    getClaimItems(programmeId, claim),
   ])
 
   const previous = versions.find((version) => version.version === claim.version - 1)
-  const total = claimTotal(claim)
+  const total = claimTotal(claim.counts)
   const asAt = formatDate(today())
   const claimsPath = `/programmes/${programmeId}/claims`
   const newVersion = claim.version > 1
@@ -74,7 +75,7 @@ export async function BuildClaim({ programmeId, claim, period }: BuildClaimProps
               <ClaimCounts counts={claim.counts} />
             </Section>
             <Section title="Results in this claim">
-              {claim.results.length > 0 ? (
+              {results.length > 0 ? (
                 <>
                   <Table>
                     <thead>
@@ -89,8 +90,8 @@ export async function BuildClaim({ programmeId, claim, period }: BuildClaimProps
                       </tr>
                     </thead>
                     <tbody>
-                      {claim.results.map((result) => (
-                        <tr key={result.id}>
+                      {results.map((result) => (
+                        <tr key={result.resultId}>
                           <Td className="font-semibold text-grey-900">{result.participantRef}</Td>
                           <Td>{result.result}</Td>
                           <Td>{result.partnerName}</Td>
@@ -103,7 +104,7 @@ export async function BuildClaim({ programmeId, claim, period }: BuildClaimProps
                               claimId={claim.id}
                               periodLabel={period.label}
                               nextPeriodLabel={nextPeriod?.label}
-                              result={result}
+                              result={{ id: result.resultId, participantRef: result.participantRef, partnerName: result.partnerName }}
                             />
                           </Td>
                         </tr>
@@ -111,7 +112,7 @@ export async function BuildClaim({ programmeId, claim, period }: BuildClaimProps
                     </tbody>
                   </Table>
                   <p className="mt-3 text-[13px] text-grey-700">
-                    Showing {claim.results.length} of {plural(total, "result")}
+                    Showing {results.length} of {plural(total, "result")}
                   </p>
                 </>
               ) : (

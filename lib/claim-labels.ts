@@ -12,8 +12,18 @@ export const monthStatusTags: Record<MonthStatus, { label: string; tone: Tone }>
   accepted: { label: "Closed", tone: "ok" },
 }
 
+export const claimStatusTags: Record<ClaimStatus, { label: string; tone: Tone }> = {
+  draft: { label: "Draft", tone: "neutral" },
+  "waiting-for-sign-off": { label: "Waiting for Sign-off", tone: "warn" },
+  submitted: { label: "Submitted", tone: "info" },
+  replaced: { label: "Replaced", tone: "neutral" },
+  "sent-back": { label: "Sent back", tone: "warn" },
+  accepted: { label: "Closed", tone: "ok" },
+}
+
 export const versionStatusTags: Record<ClaimStatus, { label: string; tone: Tone }> = {
   draft: { label: "Draft", tone: "neutral" },
+  "waiting-for-sign-off": { label: "Waiting for Sign-off", tone: "warn" },
   submitted: { label: "Submitted", tone: "info" },
   replaced: { label: "Replaced", tone: "neutral" },
   "sent-back": { label: "Sent back", tone: "warn" },

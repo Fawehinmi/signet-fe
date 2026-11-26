@@ -58,7 +58,7 @@ export function AcceptedClaim({ programmeId, claim, period }: AcceptedClaimProps
                   { label: "Accepted by", value: `${claim.accepted.by}, ${claim.accepted.organisation}` },
                   { label: "Accepted on", value: formatDateTime(claim.accepted.on) },
                   { label: "Version", value: `Version ${claim.version}` },
-                  { label: "Results", value: claimTotal(claim) },
+                  { label: "Results", value: claimTotal(claim.counts) },
                 ]}
               />
             </Section>

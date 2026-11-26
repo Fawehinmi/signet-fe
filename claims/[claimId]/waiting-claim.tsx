@@ -24,11 +24,10 @@ type WaitingClaimProps = {
 
 export async function WaitingClaim({ programmeId, claim, period, commissioner, viewer }: WaitingClaimProps) {
   const holders = await getSignOffHolders(programmeId)
-  const others = holders.filter((holder) => holder.name !== claim.builtBy)
-  const isBuilder = claim.builtBy === viewer.name
-  const canSubmit = viewer.canSignOff && !isBuilder
+  const others = holders.filter((holder) => holder.name !== viewer.name)
+  const canSubmit = viewer.canSignOff
   const stuck = others.length === 0
-  const total = claimTotal(claim)
+  const total = claimTotal(claim.counts)
   const adjustments = adjustmentTotal(claim)
   const asAt = claim.asAt ? formatDate(claim.asAt) : "Not yet"
   const claimsPath = `/programmes/${programmeId}/claims`
@@ -36,7 +35,7 @@ export async function WaitingClaim({ programmeId, claim, period, commissioner, v
 
   const people = [
     ...others.map((holder) => ({ name: holder.name, note: holder.jobTitle, canSubmit: true })),
-    { name: claim.builtBy, note: "Built this claim", canSubmit: false },
+    { name: viewer.name, note: "You", canSubmit: false },
   ]
 
   return (
@@ -72,29 +71,14 @@ export async function WaitingClaim({ programmeId, claim, period, commissioner, v
         }
       />
 
-      {!canSubmit && stuck && isBuilder && (
-        <Banner tone="warn" title="You can't submit this claim" className="mb-8">
-          You built it, so another Sign-off holder must submit it. Nobody else on the Programme team has Sign-off yet. Ask
-          an organisation admin to give someone Sign-off.
-        </Banner>
-      )}
-      {!canSubmit && stuck && !isBuilder && (
-        <Banner
-          tone="warn"
-          title="Nobody else can submit this claim"
-          className="mb-8"
-          action={
-            <Link href={`/programmes/${programmeId}/team`} className={buttonStyles({ variant: "secondary", size: "sm" })}>
-              Open Programme team
-            </Link>
-          }
-        >
-          {claim.builtBy} built it and is the only Sign-off holder. Give someone else Sign-off so they can submit it.
+      {!canSubmit && stuck && (
+        <Banner tone="warn" title="You can&apos;t submit this claim" className="mb-8">
+          No Sign-off holders are available. Ask an organisation admin to give someone Sign-off.
         </Banner>
       )}
       {!canSubmit && !stuck && (
         <Banner icon={Clock} title="Waiting for a Sign-off holder to submit" className="mb-8">
-          {isBuilder ? `You built this claim, so ${names} must submit it. We've let them know.` : `${names} can submit it.`}
+          {names} can submit it.
         </Banner>
       )}
 
@@ -151,7 +135,6 @@ export async function WaitingClaim({ programmeId, claim, period, commissioner, v
                   { label: "As at", value: asAt },
                   { label: "Results", value: total },
                   { label: "Verification", value: `All ${plural(total, "result")} verified` },
-                  { label: "Built by", value: `${claim.builtBy}, ${formatDate(claim.builtOn)}` },
                   { label: "Send by", value: formatDate(period.sendBy) },
                 ]}
               />

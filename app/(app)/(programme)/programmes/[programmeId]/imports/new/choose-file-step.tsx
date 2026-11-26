@@ -28,7 +28,7 @@ export function ChooseFileStep({ initial, onContinue }: ChooseFileStepProps) {
     watch,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm({
+  } = useForm<ChooseFileValues>({
     resolver: zodResolver(chooseFileSchema),
     mode: "onChange",
     defaultValues: { type: initial?.type ?? ("participants" as const), file: initial?.source },

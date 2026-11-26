@@ -117,9 +117,11 @@ export function MatchColumnsStep({ file, aiOn, saved, initial, onBack, onContinu
                 })}
               </tbody>
             </Table>
-            {errors.matching?.message && (
+            {((errors.matching as { root?: { message?: string }; message?: string })?.root?.message ??
+              (errors.matching as { message?: string })?.message) && (
               <p role="alert" className="text-sm text-danger-700">
-                {errors.matching.message}
+                {(errors.matching as { root?: { message?: string }; message?: string })?.root?.message ??
+                  (errors.matching as { message?: string })?.message}
               </p>
             )}
             <Checkbox label="Save this matching for next time" {...register("saveMatching")} />

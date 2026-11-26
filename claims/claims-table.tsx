@@ -43,7 +43,7 @@ export function ClaimsTable({ programmeId, claims, periods }: ClaimsTableProps) 
               <Td>
                 <Tag tone={status.tone}>{status.label}</Tag>
               </Td>
-              <Td>{claim.builtBy}</Td>
+              <Td>{claim.builtBy ?? "—"}</Td>
               <Td>
                 {claim.submitted ? formatDate(claim.submitted.on) : <span className="text-grey-600">Not yet</span>}
               </Td>
