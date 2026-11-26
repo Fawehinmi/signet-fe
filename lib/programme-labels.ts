@@ -14,7 +14,7 @@ export const statusTags: Record<ProgrammeStatus, { label: string; tone: "ok" | "
 }
 
 export const jobRoleLabels: Record<JobRole, string> = {
-  "partner-manager": "Partner manager",
+  "programme-manager": "Programme manager",
   "compliance-lead": "Compliance lead",
   caseworker: "Caseworker",
 }

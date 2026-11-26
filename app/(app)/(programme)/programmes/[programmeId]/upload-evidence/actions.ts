@@ -2,20 +2,17 @@
 
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import { z } from "zod"
-import { getClaimPeriods, getToFix } from "@/lib/data/claims"
+import { getClaimPeriods } from "@/lib/data/claims"
 import { getUpload, getUploadPool, saveUnmatchedMatch, saveUpload } from "@/lib/data/evidence"
-import { saveCheckRequest } from "@/lib/data/results"
-import { getAdmins } from "@/lib/data/team"
+import { claimParticipants } from "@/lib/data/participants"
+import { claimResults } from "@/lib/data/results"
 import { evidenceTypes, participantsInScope } from "@/lib/evidence-matching"
 import { getProgrammePage } from "@/lib/programme-page"
 import {
   evidenceFilesSchema,
   fileMatchSchema,
-  sendForCheckingSchema,
   uploadRequestSchema,
   type FileMatchValues,
-  type SendForCheckingValues,
   type UploadScope,
 } from "@/lib/validations/evidence"
 
@@ -25,6 +22,11 @@ function readRequest(value: FormDataEntryValue | null) {
   } catch {
     return null
   }
+}
+
+async function claimCaseload(programmeId: string, refs: string[], caseworker: string) {
+  const claimed = await claimParticipants(programmeId, [...new Set(refs)], caseworker)
+  await claimResults(programmeId, claimed, caseworker)
 }
 
 function cleanScope(scope: UploadScope): UploadScope {
@@ -49,7 +51,7 @@ export async function uploadEvidence(programmeId: string, formData: FormData) {
     return { error: "Choose a month from the programme's claim periods." }
   }
 
-  const caseload = await getUploadPool(programmeId, { name: session.user.name, jobRole: programme.jobRole })
+  const caseload = await getUploadPool(programmeId)
   const allowed = participantsInScope(caseload, scope).map((participant) => participant.ref)
   const outside = matches.some((match) => !allowed.includes(match.participantRef))
   const unknownType = matches.some((match) => !evidenceTypes.some((type) => type.label === match.evidenceType))
@@ -66,6 +68,7 @@ export async function uploadEvidence(programmeId: string, formData: FormData) {
     files: files.data.map((file, index) => ({ name: file.name, size: file.size, ...matches[index] })),
     unmatched,
   })
+  if (programme.jobRole === "caseworker") await claimCaseload(programmeId, matches.map((match) => match.participantRef), session.user.name)
 
   revalidatePath(`/programmes/${programmeId}`, "layout")
   redirect(`/programmes/${programmeId}/upload-evidence/${upload.id}`)
@@ -84,7 +87,7 @@ export async function matchUnmatched(programmeId: string, uploadId: string, file
     return { error: "Choose a participant, an evidence type and a result." }
   }
 
-  const caseload = await getUploadPool(programmeId, { name: session.user.name, jobRole: programme.jobRole })
+  const caseload = await getUploadPool(programmeId)
   const allowed = participantsInScope(caseload, upload.scope).some((participant) => participant.ref === parsed.data.participantRef)
   const knownType = evidenceTypes.some((type) => type.label === parsed.data.evidenceType)
 
@@ -93,33 +96,8 @@ export async function matchUnmatched(programmeId: string, uploadId: string, file
   }
 
   await saveUnmatchedMatch(programmeId, uploadId, fileName, parsed.data)
+  if (programme.jobRole === "caseworker") await claimCaseload(programmeId, [parsed.data.participantRef], session.user.name)
   revalidatePath(`/programmes/${programmeId}`, "layout")
 
   return { error: null }
-}
-
-export async function sendForChecking(programmeId: string, resultId: string, values: SendForCheckingValues) {
-  const { session, programme } = await getProgrammePage(programmeId, "upload-evidence")
-
-  const result = (await getToFix(programmeId)).find((row) => row.result.id === resultId)?.result
-  const canSend =
-    programme.jobRole === "caseworker" &&
-    result?.caseworker === session.user.name &&
-    result.label === "needs-evidence" &&
-    !result.heldDecision &&
-    !(result.check && !result.check.answer)
-
-  if (!canSend || (await getAdmins(programmeId)).length === 0) {
-    return { errors: { note: ["This result can't be sent for checking now. Refresh the page to see the latest."] } }
-  }
-
-  const parsed = sendForCheckingSchema.safeParse(values)
-  if (!parsed.success) {
-    return { errors: z.flattenError(parsed.error).fieldErrors }
-  }
-
-  await saveCheckRequest(programmeId, resultId, { by: session.user.name, note: parsed.data.note })
-  revalidatePath(`/programmes/${programmeId}`, "layout")
-
-  return { errors: null }
 }

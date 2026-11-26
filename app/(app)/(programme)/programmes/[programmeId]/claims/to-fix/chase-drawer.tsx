@@ -78,7 +78,7 @@ export function ChaseDrawer({ programmeId, rows, onClose, onSent }: ChaseDrawerP
               { label: "Reason", value: one.why || resultLabelTags[one.label].label },
               { label: "Waiting", value: plural(one.waiting, "day") },
               { label: "Claim", value: one.claim ? `${one.claim.label}, send by ${one.claim.sendBy}` : "Next claim, once it's ready" },
-              { label: "Send to", value: one.ownDelivery ? `${one.recipient}, their caseworker` : one.recipient },
+              { label: "Send to", value: one.ownDelivery && one.hasCaseworker ? `${one.recipient}, their caseworker` : one.recipient },
             ]}
           />
         ) : (
@@ -99,7 +99,7 @@ export function ChaseDrawer({ programmeId, rows, onClose, onSent }: ChaseDrawerP
         <TextareaInput
           label="What's needed"
           rows={4}
-          helper={`${joinNames(recipients)} ${recipients.length === 1 ? "sees" : "see"} this on the Upload evidence page.`}
+          helper={`${joinNames(recipients)} ${recipients.length === 1 ? "sees" : "see"} this message.`}
           error={errors.message?.message ?? errors.resultIds?.message}
           {...register("message")}
         />

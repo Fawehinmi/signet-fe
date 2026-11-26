@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-export const jobRoles = ["partner-manager", "compliance-lead", "caseworker"] as const
+export const jobRoles = ["programme-manager", "compliance-lead", "caseworker"] as const
 export const teamPermissions = ["sign-off", "bulk-import", "bulk-upload"] as const
 
 const access = {

@@ -67,6 +67,7 @@ export default async function ToFixPage({ params, searchParams }: ToFixPageProps
         waiting: waitingDays(result),
         followUp,
         recipient: recipientFor(result),
+        hasCaseworker: Boolean(result.caseworker),
         canChase: followUp?.kind !== "accepted" && !(admin && checking) && (anyResult || (admin && !result.partnerName)),
         check:
           admin && checking && result.check

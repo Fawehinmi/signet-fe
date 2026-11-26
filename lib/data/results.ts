@@ -59,7 +59,7 @@ export type Completion = {
 }
 
 type Seed = Pick<ProgrammeResult, "participantRef" | "result" | "partnerName" | "periodId" | "label"> &
-  Partial<Pick<ProgrammeResult, "why" | "missing" | "since" | "chases">>
+  Partial<Pick<ProgrammeResult, "why" | "missing" | "since" | "chases" | "caseworker">>
 
 const partners = ["Harbour Skills", "Riverside Trust", "Brightwell Training"]
 
@@ -81,7 +81,7 @@ function seed(item: Seed): ProgrammeResult {
     heldDecision: null,
     ...item,
     id: resultId(item.participantRef, item.result),
-    caseworker: item.partnerName ? null : "Tom Okafor",
+    caseworker: item.partnerName ? null : item.caseworker === undefined ? "Tom Okafor" : item.caseworker,
   }
 }
 
@@ -223,6 +223,28 @@ const resultsByProgramme: Record<string, ProgrammeResult[]> = {
       missing: ["Payslip", "Employer letter"],
       since: daysAgo(1),
     }),
+    seed({
+      participantRef: "NS-0488",
+      result: "Outcome",
+      partnerName: null,
+      caseworker: "Grace Mensah",
+      periodId: "2027-10",
+      label: "needs-evidence",
+      why: "No payslip",
+      missing: ["Payslip"],
+      since: daysAgo(6),
+    }),
+    seed({
+      participantRef: "NS-0512",
+      result: "Enrolled",
+      partnerName: null,
+      caseworker: null,
+      periodId: "2027-10",
+      label: "needs-evidence",
+      why: "No referral letter",
+      missing: ["Referral letter"],
+      since: daysAgo(4),
+    }),
   ],
 }
 
@@ -260,7 +282,13 @@ export function waitingDays(result: ProgrammeResult) {
 }
 
 export function recipientFor(result: ProgrammeResult) {
-  return result.partnerName ?? result.caseworker ?? "their caseworker"
+  return result.partnerName ?? result.caseworker ?? "Organisation admin"
+}
+
+export async function claimResults(programmeId: string, refs: string[], caseworker: string) {
+  for (const result of resultsFor(programmeId)) {
+    if (refs.includes(result.participantRef) && !result.partnerName && !result.caseworker) result.caseworker = caseworker
+  }
 }
 
 export async function getResults(programmeId: string) {

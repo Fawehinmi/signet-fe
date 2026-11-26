@@ -31,6 +31,7 @@ const priya = person("Priya Nair", "Partnerships manager", true)
 const marcus = person("Marcus Webb", "Contracts and claims lead")
 const ruth = person("Ruth Adeyemi", "Compliance lead")
 const tom = person("Tom Okafor", "Employment caseworker")
+const grace = person("Grace Mensah", "Employment caseworker")
 const jade = person("Jade Wilson", "Data officer")
 
 const staffByOrganisation: Record<string, StaffMember[]> = {
@@ -39,7 +40,7 @@ const staffByOrganisation: Record<string, StaffMember[]> = {
     marcus,
     ruth,
     tom,
-    person("Grace Mensah", "Employment caseworker"),
+    grace,
     person("Owen Price", "Finance manager"),
     person("Daniel Okoro", "Data officer"),
     jade,
@@ -48,14 +49,15 @@ const staffByOrganisation: Record<string, StaffMember[]> = {
 
 const teams: Record<string, TeamMember[]> = {
   "ctw-northshire": [
-    { ...priya, jobRole: "partner-manager", permissions: [], addedOn: "2027-03-12" },
-    { ...marcus, jobRole: "partner-manager", permissions: ["sign-off", "bulk-import"], addedOn: "2027-03-12" },
+    { ...priya, jobRole: "programme-manager", permissions: [], addedOn: "2027-03-12" },
+    { ...marcus, jobRole: "programme-manager", permissions: ["sign-off", "bulk-import"], addedOn: "2027-03-12" },
     { ...ruth, jobRole: "compliance-lead", permissions: [], addedOn: "2027-03-12" },
     { ...tom, jobRole: "caseworker", permissions: ["bulk-upload"], addedOn: "2027-04-02" },
+    { ...grace, jobRole: "caseworker", permissions: ["bulk-upload"], addedOn: "2027-06-14" },
   ],
   "ctw-westmoor": [
-    { ...priya, jobRole: "partner-manager", permissions: [], addedOn: "2027-05-20" },
-    { ...marcus, jobRole: "partner-manager", permissions: ["sign-off"], addedOn: "2027-05-20" },
+    { ...priya, jobRole: "programme-manager", permissions: [], addedOn: "2027-05-20" },
+    { ...marcus, jobRole: "programme-manager", permissions: ["sign-off"], addedOn: "2027-05-20" },
     { ...ruth, jobRole: "compliance-lead", permissions: [], addedOn: "2027-05-20" },
   ],
 }

@@ -25,6 +25,7 @@ export type FixRow = {
   waiting: number
   followUp: FollowUp | null
   recipient: string
+  hasCaseworker: boolean
   canChase: boolean
   check: { by: string; on: string; note: string; evidence: string[] } | null
 }

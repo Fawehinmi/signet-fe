@@ -4,7 +4,7 @@ export type OrganisationType = "provider" | "commissioner"
 export type OrganisationAccess = "admin" | "member"
 export type ProgrammePosition = "prime" | "subcontractor" | "commissioner"
 export type ProgrammeStatus = "waiting-for-documents" | "rules-in-progress" | "waiting-for-confirmation" | "live"
-export type JobRole = "partner-manager" | "compliance-lead" | "caseworker"
+export type JobRole = "programme-manager" | "compliance-lead" | "caseworker"
 export type Permission = "sign-off" | "bulk-import" | "bulk-upload" | "privacy"
 
 export type ProgrammeMembership = {
@@ -12,7 +12,7 @@ export type ProgrammeMembership = {
   name: string
   position: ProgrammePosition
   status: ProgrammeStatus
-  jobRole?: JobRole
+  jobRole: JobRole
   permissions: Permission[]
 }
 

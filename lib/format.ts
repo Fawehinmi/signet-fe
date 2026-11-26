@@ -50,3 +50,8 @@ export function addDays(date: string, days: number) {
   value.setUTCDate(value.getUTCDate() + days)
   return value.toISOString().slice(0, 10)
 }
+
+export function formatDateRange(start: string, end: string) {
+  const from = formatDate(start)
+  return start.slice(0, 4) === end.slice(0, 4) ? `${from.slice(0, -5)} to ${formatDate(end)}` : `${from} to ${formatDate(end)}`
+}

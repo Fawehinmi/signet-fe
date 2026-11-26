@@ -1,5 +1,5 @@
 import { getClaimPeriods } from "@/lib/data/claims"
-import { getResultChecks, getUploadPool, poolLabel } from "@/lib/data/evidence"
+import { getResultChecks, getUploadPool } from "@/lib/data/evidence"
 import { getProgrammeDetails } from "@/lib/data/programmes"
 import { getProgrammePage } from "@/lib/programme-page"
 import { UploadWizard } from "./upload-wizard"
@@ -12,11 +12,11 @@ type NewUploadPageProps = {
 export default async function NewUploadPage({ params, searchParams }: NewUploadPageProps) {
   const { programmeId } = await params
   const { participant } = await searchParams
-  const { session, programme } = await getProgrammePage(programmeId, "upload-evidence")
+  await getProgrammePage(programmeId, "upload-evidence")
 
   const [periods, caseload, details] = await Promise.all([
     getClaimPeriods(programmeId),
-    getUploadPool(programmeId, { name: session.user.name, jobRole: programme.jobRole }),
+    getUploadPool(programmeId),
     getProgrammeDetails(programmeId),
   ])
 
@@ -30,7 +30,7 @@ export default async function NewUploadPage({ params, searchParams }: NewUploadP
       programmeId={programmeId}
       periods={periods.map(({ id, label }) => ({ id, label }))}
       caseload={caseload}
-      pool={poolLabel(programme.jobRole)}
+      pool="your own delivery"
       aiOn={details?.aiFeatures.on ?? false}
       checks={checks}
       initialScope={

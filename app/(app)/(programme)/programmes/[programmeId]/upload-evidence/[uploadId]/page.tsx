@@ -22,14 +22,14 @@ type UploadPageProps = {
 
 export default async function UploadPage({ params }: UploadPageProps) {
   const { programmeId, uploadId } = await params
-  const { session, programme } = await getProgrammePage(programmeId, "upload-evidence")
+  const { session } = await getProgrammePage(programmeId, "upload-evidence")
 
   const upload = await getUpload(programmeId, uploadId)
   if (!upload || upload.uploadedBy !== session.user.name) notFound()
 
   const [periods, caseload] = await Promise.all([
     getClaimPeriods(programmeId),
-    getUploadPool(programmeId, { name: session.user.name, jobRole: programme.jobRole }),
+    getUploadPool(programmeId),
   ])
   const scope = describeScope(upload.scope, periods, caseload)
   const uploadsPath = `/programmes/${programmeId}/upload-evidence`

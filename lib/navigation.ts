@@ -66,22 +66,30 @@ export function programmeNavigation(session: Session, programme: ProgrammeMember
   const claims = item("claims", "Claims", "inbox")
   const proofPack = item("proof-pack", "Proof pack", "file-check")
   const imports = item("imports", "Imports", "upload")
+  const uploadEvidence = item("upload-evidence", "Upload evidence", "file-plus", "Upload")
   const questions = item("questions", "Questions", "message")
   const organisations = item("organisations", "Organisations", "building")
   const rules = item("rules", "Rules", "book")
   const team = item("team", "Programme team", "users")
   const settings = item("settings", "Programme settings", "sliders")
+  const needsEvidence = item("needs-evidence", "Needs evidence", "alert")
+
+  if (programme.position === "prime" && programme.jobRole === "caseworker") {
+    return [
+      dashboard,
+      item("participants", "My participants", "users", "Participants"),
+      needsEvidence,
+      ...when(has("bulk-upload"), uploadEvidence),
+    ]
+  }
 
   if (programme.jobRole === "caseworker") {
     return [
       home,
       dashboard,
-      ...when(has("bulk-import"), imports),
-      claims,
       participants,
       outcomeChecks,
-      ...when(has("bulk-upload"), item("upload-evidence", "Upload evidence", "file-plus", "Upload")),
-
+      ...when(has("bulk-upload"), uploadEvidence),
     ]
   }
 
@@ -111,6 +119,7 @@ export function programmeNavigation(session: Session, programme: ProgrammeMember
       rules,
       claims,
       proofPack,
+      item("follow-up", "Follow up", "message"),
       item("partners", "Our partners", "partners"),
       team,
       ...when(isAdmin, settings),
@@ -122,11 +131,12 @@ export function programmeNavigation(session: Session, programme: ProgrammeMember
     dashboard,
     participants,
     outcomeChecks,
-    item("needs-evidence", "Needs evidence", "alert"),
+    needsEvidence,
     ...when(has("sign-off"), item("approvals", "Approvals", "check-circle")),
     item("send-to-prime", "Send to prime", "send"),
     proofPack,
     ...when(has("bulk-import"), imports),
+    ...when(has("bulk-upload"), uploadEvidence),
     questions,
     ...when(has("privacy"), item("privacy", "Privacy", "shield")),
     rules,

@@ -6,11 +6,10 @@ import { BottomTabs } from "@/components/app/bottom-tabs"
 import { ProgrammeSwitcher } from "@/components/app/programme-switcher"
 import { Sidebar } from "@/components/app/sidebar"
 import { Tag } from "@/components/ui/tag"
-import { findProgramme, programmeNavigation } from "@/lib/navigation"
-import { positionLabels, statusTags } from "@/lib/programme-labels"
-import { getSession } from "@/lib/session"
 import { getProgrammeStatus } from "@/lib/data/rules"
-
+import { findProgramme, programmeNavigation } from "@/lib/navigation"
+import { jobRoleLabels, positionLabels, statusTags } from "@/lib/programme-labels"
+import { getSession } from "@/lib/session"
 
 export default async function ProgrammeLayout({
   children,
@@ -55,7 +54,7 @@ export default async function ProgrammeLayout({
         <Sidebar
           items={items}
           top={backLink}
-          user={{ name: session.user.name, role: session.organisation.access === "admin" ? "Admin" : "Member" }}
+          user={{ name: session.user.name, role: jobRoleLabels[programme.jobRole] }}
         />
       }
       topBar={topBar}
@@ -65,4 +64,3 @@ export default async function ProgrammeLayout({
     </AppShell>
   )
 }
-

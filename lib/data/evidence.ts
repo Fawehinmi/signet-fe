@@ -4,7 +4,6 @@ import { addEvidence, getParticipantResults, getResults } from "@/lib/data/resul
 import type { CaseloadParticipant } from "@/lib/evidence-matching"
 import { resultLabelTags } from "@/lib/programme-labels"
 import { resultNouns, type ResultCheck } from "@/lib/result-checks"
-import type { JobRole } from "@/lib/session"
 import type { EvidenceResult, FileMatchValues, UploadScope } from "@/lib/validations/evidence"
 
 export type UploadChange = {
@@ -136,25 +135,16 @@ async function recordEvidence(programmeId: string, scope: UploadScope, files: Ev
   return changes
 }
 
-export async function getUploadPool(
-  programmeId: string,
-  person: { name: string; jobRole?: JobRole },
-): Promise<CaseloadParticipant[]> {
+export async function getUploadPool(programmeId: string): Promise<CaseloadParticipant[]> {
   const results = await getResults(programmeId)
 
-  return (await getOwnParticipants(programmeId))
-    .filter((participant) => person.jobRole !== "caseworker" || participant.caseworker === person.name)
-    .map(({ ref, name }) => ({
-      ref,
-      name,
-      results: results
-        .filter((result) => result.participantRef === ref)
-        .map((result) => ({ periodId: result.periodId ?? "", result: result.result })),
-    }))
-}
-
-export function poolLabel(jobRole?: JobRole) {
-  return jobRole === "caseworker" ? "your caseload" : "your own delivery"
+  return (await getOwnParticipants(programmeId)).map(({ ref, name }) => ({
+    ref,
+    name,
+    results: results
+      .filter((result) => result.participantRef === ref)
+      .map((result) => ({ periodId: result.periodId ?? "", result: result.result })),
+  }))
 }
 
 export async function getResultChecks(programmeId: string, refs: string[]): Promise<ResultCheck[]> {
@@ -189,6 +179,10 @@ export async function getEvidenceOnFile(programmeId: string, participantRef: str
   }
 
   return [...latest].map(([evidenceType, on]) => ({ evidenceType, on }))
+}
+
+export async function getLastUpload(programmeId: string) {
+  return uploadsFor(programmeId).reduce<string | null>((latest, upload) => (!latest || upload.on > latest ? upload.on : latest), null)
 }
 
 export async function getUploads(programmeId: string, uploadedBy: string) {

@@ -53,7 +53,7 @@ export function AccessDrawer({ programmeId, member, staff, signOffHolders, onClo
             (teamPermissions as readonly string[]).includes(permission),
           ) as AddMemberValues["permissions"],
         }
-      : { email: "", jobRole: "partner-manager" as const, permissions: [] as AddMemberValues["permissions"] },
+      : { email: "", jobRole: "programme-manager" as const, permissions: [] as AddMemberValues["permissions"] },
   })
 
   const [email, jobRole, permissions] = watch(["email", "jobRole", "permissions"])
