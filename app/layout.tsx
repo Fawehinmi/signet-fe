@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   title: "Signet",
 }
 
+export const instant = false
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-GB" className={`${openSans.variable} ${roboto.variable}`}>
@@ -16,3 +18,5 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   )
 }
+
+
